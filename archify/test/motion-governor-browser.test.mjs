@@ -65,8 +65,6 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
       if (location.href !== ${JSON.stringify(fixtureUrl)}) return;
       window.motionNavigation = ${expectedNavigation};
-      try { window.motionStartupPreference = localStorage.getItem('archify-motion'); }
-      catch (error) { window.motionStartupPreference = String(error); }
       window.motionErrors = []; window.motionEnds = []; window.motionAmbient = [];
       addEventListener('error', e => motionErrors.push(e.message));
       addEventListener('unhandledrejection', e => motionErrors.push(String(e.reason)));
@@ -156,11 +154,14 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     assert.equal(await run('Archify.motionGovernor.pause()'), true);
     assert.equal(await run(`localStorage.getItem('archify-motion')`), 'still');
     const storedUrl = await run('location.href');
+    // Observe after normal startup. A CDP new-document localStorage read can
+    // change Chrome's file-backed storage behavior, even in script-free HTML.
+    // The Viewer must restore the saved choice itself on every reload.
     for (let reload = 0; reload < 5; reload++) {
       await load('architecture', { preserveStorage: true });
-      const stored = await run(`({initial:motionStartupPreference,current:localStorage.getItem('archify-motion'),navigation:motionNavigation,url:location.href})`);
+      const stored = await run(`({current:localStorage.getItem('archify-motion'),navigation:motionNavigation,url:location.href})`);
       assert.equal(stored.url, storedUrl, 'Preference persistence must reload the same file URL.');
-      assert.equal(stored.initial, 'still', 'Preference must survive before application startup.');
+      assert.equal(stored.current, 'still', 'Preference must survive reloading the standalone file.');
       assert.equal((await snapshot('stored-still-' + reload)).mode, 'still', JSON.stringify(stored));
     }
     assert.equal(await run(`Archify.motionGovernor.setMode('live', {persist:false})`), 'live');
