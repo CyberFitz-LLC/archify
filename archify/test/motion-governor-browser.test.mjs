@@ -60,6 +60,10 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     const expectedNavigation = ++navigationId;
     if (!preserveStorage) {
       fixtureUrl = pathToFileURL(files[mode]).href + `?theme=${theme}&testNavigation=${expectedNavigation}${query}`;
+      // Reset the disposable browser profile before navigation. Touching
+      // localStorage in a new-document script can disturb file-backed storage
+      // in Chrome; leave startup and reload reads to the Viewer itself.
+      await send('Storage.clearDataForStorageKey', { storageKey: 'file:///', storageTypes: 'local_storage' });
     }
     if (startup) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: startup });
     ({ identifier: startup } = await send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
@@ -85,7 +89,6 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
         }
         requestAnimationFrame(sample);
       });
-      ${preserveStorage ? '' : "try { localStorage.removeItem('archify-motion'); } catch (_) {}"}
       ${fixture}
     })();` }));
     await send('Emulation.setDeviceMetricsOverride', { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
@@ -181,6 +184,10 @@ test('Motion Governor preserves mode, ownership, ambient completion and real cal
     assert.equal((await snapshot('released')).mode, 'live');
     assert.equal(await run('Archify.motionGovernor.toggle()'), true);
     assert.equal(await run('Archify.motionGovernor.toggle()'), false);
+    await run('Archify.motionGovernor.pause()');
+    await load();
+    assert.equal(await run(`localStorage.getItem('archify-motion')`), null, 'Fresh fixtures reset prior stored intent.');
+    assert.equal((await snapshot('fresh-after-stored-intent')).mode, 'live');
     await load('architecture', { fixture: `Storage.prototype.getItem = Storage.prototype.setItem = Storage.prototype.removeItem = function () { throw new Error('storage fixture'); };` });
     assert.equal(await run('Archify.motionGovernor.pause()'), true);
     assert.equal(await run('Archify.motionGovernor.resume()'), false);
