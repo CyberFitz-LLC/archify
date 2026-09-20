@@ -137,6 +137,12 @@ a time.
 
 ### Repair order
 
+Repairs add space; they never remove truth. On the infinite canvas the plane is
+free, so the answer to a crowded route or label is to move a node, widen a gap,
+or grow `meta.viewBox` — not to drop a node, relationship, or meaningful label,
+and not to split the diagram. When `supportedFixes` offers a size reduction,
+take the spacing alternative.
+
 1. Fix missing/invalid `meta.quality_profile` and schema errors.
 2. Fix node overlap or out-of-range placement.
 3. Fix edge-through-node and endpoint-direction errors.
@@ -149,14 +155,14 @@ Run `validate` after every edit. Consume `diagnostics[]` by stable `code`, exact
 
 ### Architecture
 
-Use one left-to-right spine with short vertical branches. Prefer 6–12 primary components and group only real ownership, trust, process, or deployment boundaries. Boundaries do not replace relationships.
+Give each flow a left-to-right spine with short vertical branches. There is no target component count: draw every component the system really has. A large system reads best as regions of the plane — one band or block per domain, tier, or ownership boundary, with 200px or more of clear space between regions so cross-region routes have their own corridors — and `meta.viewBox` grows to hold them. Group only real ownership, trust, process, or deployment boundaries. Boundaries do not replace relationships.
 
-Grid placement is preferred when the schema supports it. Free positions are appropriate for a bounded exception, not for prose-level coordinate planning. Keep external actors outside the system boundary when that is factually true.
+Grid placement is preferred when the schema supports it and the system fits its twelve columns; larger planes use free positions on a consistent pitch (for example 230px × 240px cells), generated as arithmetic rather than planned coordinate by coordinate in prose. Keep external actors outside the system boundary when that is factually true.
 
 ### Workflow
 
-Lanes express responsibility or phase. Columns `0..5` express logical
-progression. Start new workflows on `readable-v2`; retain `fixed-v1` only for
+Lanes express responsibility or phase. Columns express logical progression;
+`readable-v2` adds columns as the process needs them (`fixed-v1` keeps its six). Start new workflows on `readable-v2`; retain `fixed-v1` only for
 legacy geometry compatibility. Keep the happy path monotonic, preserve semantic
 edge labels, and route retries and exception returns outside the main lane
 corridor.
@@ -167,11 +173,12 @@ Participants are ordered by conversation role. Messages own their vertical order
 
 ### Dataflow
 
-Stages express transformation or custody. Rows separate parallel streams. Label only data contracts, classifications, or cross-boundary movement that is not obvious.
+Stages express transformation or custody. Rows separate parallel streams. Neither is capped at five: add stages as custody changes hands and rows as streams run in parallel, and size `meta.viewBox` to hold them (the validator states the minimum width; each row needs 114px of height). Label only data contracts, classifications, or cross-boundary movement that is not obvious.
 
 ### Lifecycle
 
-Main phases use columns `0..4`; event and terminal bands use columns `0..2`.
+Main phases use columns `0..4` on the default 980px plane, plus one column for
+every 154px added to `meta.viewBox[0]`; event and terminal bands follow.
 Event/terminal column `N` aligns to the same x coordinate as main column
 `N + 2`. A recoverable failure needs a real transition back to an active state.
 A card or guided view saying “retry” is not topology.

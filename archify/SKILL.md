@@ -1,16 +1,17 @@
 ---
 name: archify
-description: Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code. Use when the user asks to visualize system architecture, infrastructure, cloud/security/network topology, technical workflows, API call sequences, request lifecycles, data pipelines, ETL/ELT, data lineage, state machines, or to convert/beautify Mermaid.
+description: Create polished, validated architecture, workflow, sequence, data-flow, and lifecycle/state diagrams as explorable standalone HTML on an infinite pan-and-zoom canvas, sized to the full subject rather than to one screen, with inline SVG, dark/light themes, optional trace motion, and PNG/JPEG/WebP/SVG/WebM export. Accept plain-language requirements or pasted Mermaid flowchart, sequenceDiagram, and stateDiagram input; inspect repository evidence when the diagram must reflect real code. Use when the user asks to visualize system architecture, infrastructure, cloud/security/network topology, technical workflows, API call sequences, request lifecycles, data pipelines, ETL/ELT, data lineage, state machines, or to convert/beautify Mermaid.
 license: MIT
 metadata:
   version: "2.17"
   author: tt-a1i
   based_on: Cocoon-AI/architecture-diagram-generator (MIT, v1.0)
+  fork: CyberFitz fork of tt-a1i/archify (infinite canvas reader, no size caps); see fork/FORK.md in the repository
 ---
 
 # Archify
 
-Create a self-contained, interactive HTML diagram from a small typed JSON specification. Static output is the default; enable motion only when the user asks for a demo or presentation.
+Create a self-contained, interactive HTML diagram from a typed JSON specification. The reader is an infinite canvas: the diagram owns the whole viewport, people pan and zoom freely, and overview zoom automatically falls back to primary labels. Draw the subject at its true size and completeness. Static output is the default; enable motion only when the user asks for a demo or presentation.
 
 ## Fast authoring path
 
@@ -18,23 +19,25 @@ Use this bounded path for ordinary generation. Do not read the optional Viewer R
 
 1. Choose `architecture`, `workflow`, `sequence`, `dataflow`, or `lifecycle` from the question.
 2. Read one matching schema in `schemas/`, `schemas/common.schema.json`, and one matching JSON example in `examples/`. Read only those files. Fresh authorship means new stable IDs, domain wording, and layout; use the example for field shape, not facts. New workflow sources use `schema_version: 2` and its readable layout contract; keep `schema_version: 1` only when preserving an existing workflow's fixed geometry. When real product identity matters, query `node bin/archify.mjs brands "<name>" --json`; read `references/brand-marks.md` only for an unknown brand with a user-provided URL.
-3. Artifact first: the next tool action must write the candidate. Write the candidate before inspecting renderer internals. Do not plan exact coordinates in prose. Start with one clear main path, short side branches, sparse labels, and at most 12 primary nodes. Set `meta.quality_profile` to `"showcase"` unless the user explicitly requests a dense `standard` map. Start with automatic routes and labels. Do not add `via`, `channelX`, `channelY`, or `labelAt` before a diagnostic calls for one; apply at most one diagnosed geometry control per repair.
+3. Artifact first: the next tool action must write the candidate. Write the candidate before inspecting renderer internals. Do not plan exact coordinates in prose. Size the diagram to the subject, not to a screen: include every component, relationship, boundary, and meaningful label the subject really has, and let `meta.viewBox` grow to hold them (2400×1600 or 4000×2800 is normal for a real system). Do not prune, merge, or summarize nodes to make the picture smaller, and do not split one system into several diagrams unless the user asks; a reader who wants less zooms out, a reader who was never shown a node cannot zoom in to find it. Carry scale with structure instead of omission: real boundaries, lanes, stages, and groups as regions of the plane, consistent spacing that is as compact as clean routing allows (a gap of 60–120px between neighbours, wider only where a corridor carries several routes), one readable spine per flow, and `meta.views` chapters as the tour. Set `meta.quality_profile` to `"showcase"` unless the user explicitly requests a dense `standard` map. Start with automatic routes and labels. Do not add `via`, `channelX`, `channelY`, or `labelAt` before a diagnostic calls for one; apply at most one diagnosed geometry control per repair.
 4. Validate after every candidate edit and immediately before handoff:
 
    ```bash
    node bin/archify.mjs validate <type> <candidate.json> --quality showcase --json
    ```
 
-   A receipt with only 4 artifact checks is basic validation, never showcase acceptance. A showcase pass must report all 9 artifact checks with 0 composition errors and 0 warnings. If the candidate omits or misspells the exact `meta.quality_profile` field, fix it before geometry. For a workflow v2 geometry diagnosis, run `node bin/archify.mjs validate workflow <candidate.json> --layout-json` and use the stable compiler receipt; solver internals are not authoring controls. A passing final validation freezes the candidate: never edit it afterward.
+   A receipt with only 4 artifact checks is basic validation, never showcase acceptance. A showcase pass must report all 9 artifact checks with 0 composition errors and 0 warnings, with one canvas exception: `composition/proper-crossing` warnings may remain, because a large real system is rarely planar, so a clean perpendicular crossing is a warning to minimise, never a reason to delete a relationship. Work the count down by reordering nodes and regions and by giving fan-out relationships (secrets, telemetry, a shared bus) their own trunk corridor; then report how many crossings remain and which relationships force them. The page reader has no such exception. If the candidate omits or misspells the exact `meta.quality_profile` field, fix it before geometry. For a workflow v2 geometry diagnosis, run `node bin/archify.mjs validate workflow <candidate.json> --layout-json` and use the stable compiler receipt; solver internals are not authoring controls. A passing final validation freezes the candidate: never edit it afterward.
 5. For a delivered HTML, `deliver` is the final acceptance command:
 
    ```bash
    node bin/archify.mjs deliver <type> <candidate.json> <output.html> --quality showcase --json
    ```
 
-   A non-zero exit can never be described as success. A failed delivery preserves any previous output, so do not run `visual-check` on that path: it would inspect the stale last-good artifact, not the failed candidate. If validation fails, change only the diagnosed `subject`, verify `evidence`, choose from `supportedFixes`, and rerun. Continue focused correction while the objective error count reaches a new minimum. If two consecutive rounds do not improve that best count, stop and report the unresolved diagnostics truthfully.
+   A non-zero exit can never be described as success. A failed delivery preserves any previous output, so do not run `visual-check` on that path: it would inspect the stale last-good artifact, not the failed candidate. If validation fails, change only the diagnosed `subject`, verify `evidence`, choose from `supportedFixes`, and rerun. Repairs add space, they never remove truth: when a `supportedFixes` entry offers to reduce the viewBox, shorten copy, or split the diagram, prefer moving, spacing, or growing the plane. Continue focused correction while the objective error count reaches a new minimum. If two consecutive rounds do not improve that best count, stop and report the unresolved diagnostics truthfully.
 
 ## Update awareness
+
+This is the CyberFitz fork. Upstream releases reach it through the fork's own upstream-sync pull requests, so an `update_available` notice is information about upstream only; add one sentence saying the fork syncs upstream releases itself and that installing the upstream package directly would replace the canvas reader.
 
 After the first candidate exists, run the packaged checker `scripts/check-update.mjs` once with Node and continue the requested workflow. If the command cannot run, continue without mentioning the check.
 
@@ -50,7 +53,7 @@ existing source needs fixed legacy geometry. Keep semantic edge labels and act
 on the compiler diagnostic. The canonical layout, pin, migration, and receipt
 contract is in [`renderers/workflow/README.md`](renderers/workflow/README.md#layout-contracts).
 
-Lifecycle note: phase columns `0..4` occupy the main rail; event/terminal column `N` in `0..2` aligns exactly beneath main column `N + 2`. A recoverable state uses `type: "failure"` plus a real transition back to the active state.
+Lifecycle note: phase columns start at `0..4` on the default 980px plane and gain one column for every 154px added to `meta.viewBox[0]`; event/terminal column `N` aligns exactly beneath main column `N + 2`. Workflow v2 columns and dataflow stages and rows likewise follow the authored content and plane, so a long process or wide lineage is drawn whole. A recoverable state uses `type: "failure"` plus a real transition back to the active state.
 
 ## Type router
 
@@ -74,10 +77,10 @@ Read Mermaid for topology and meaning, then author fresh Archify JSON; do not me
 
 ## Authoring invariants
 
-- One obvious main path; side branches leave the nearest main-path node. Remove low-value edges before adding routing controls.
+- Give each flow a readable spine and let side branches leave the nearest spine node; a real system usually has several flows, so lay each out as its own band or region rather than forcing one path. Every true relationship stays. When routing gets hard, the plane is free: move nodes, widen gaps, or grow `meta.viewBox` before adding routing controls, and never delete a relationship, node, or label to make geometry easier.
 - Omit `meta.visual_preset` by default so every diagram opens in `classic`, regardless of whether its resolved color mode is light or dark. Color mode and visual preset are independent: switching Light / Dark must preserve the current preset. Set `signal-flow`, `blueprint`, or `editorial` only when the user explicitly requests that visual style.
 - Omit `meta.subtitle` by default. Never invent a subtitle that restates the title, nodes, or cards; include one short supporting line only when the user explicitly asks for it.
-- Treat the standalone desktop viewer as a first-screen artifact by default, not a shallow strip. Generate one responsive artifact for laptops and external displays—never device-specific HTML or alternate topology. The viewer may adapt only the outer reading width from the live viewport height; it must preserve the authored SVG/viewBox, proportions, semantic geometry, and normal document flow. On a wide or tall desktop, use enough authored vertical rhythm that the diagram panel and its necessary conclusion cards occupy the screen as a balanced whole; runtime scaling cannot repair an over-compressed Y layout or an undersized explicit `meta.viewBox`. Before handoff, open the real HTML at 1440×900, 1600×1000, and 1920×1080; additionally check 2048×1320 whenever the composition is intended for a large desktop display. Require `document.documentElement.scrollWidth <= window.innerWidth` and `scrollHeight <= window.innerHeight` at every checked size, while visually checking that the diagram remains comfortably readable and vertically balanced at the largest checked viewport. Repair overflow by removing only genuinely redundant content or compacting spacing before shrinking nodes, labels, or the main panel. If the largest viewport still has a conspicuous empty lower band at the viewer's width cap, redistribute authored Y positions and increase the viewBox height proportionally; do not add filler copy or decorative cards. Never counterfeit a pass with `overflow: hidden`, clipped content, an internal diagram scroller, stretched SVG height, or smaller typography. Narrow/mobile layouts may scroll vertically when containment requires it.
+- The standard reader is the infinite canvas; omit `meta.layout_mode` to get it. There is no first-screen, no-scroll, or minimum-projected-text requirement: a large viewBox is not a defect, because the reader zooms to real pixels (`1`), fits everything (`0`), and gets map/read/full detail levels by real-pixel scale. Author at natural size — keep node and label typography as the renderer sets it and spend space freely; never shrink nodes, labels, or spacing to make a diagram look compact at fit. Size `meta.viewBox` to the content plus a comfortable margin, not to a monitor aspect ratio, and do not add filler to square it off. Set `meta.layout_mode: "page"` only when the user explicitly asks for the boxed single-screen page reader (for example a fixed-size embed or print sheet); that reader has its own fit contract in `references/page-reader.md`, and its size limits apply only there.
 - Omit `meta.legend` for the truthful `auto` default. When needed, use only `mode: auto|all|hidden` and renderer-supported `entries.<kind>.label|visible`; labels never change semantics.
 - Choose one primary authored language from an explicit user choice; otherwise follow the request or conversation's dominant language. `meta.locale` controls only renderer-owned Viewer UI: use `"en"` or `"zh-CN"` for the corresponding supported primary language. For every other language, omit `meta.locale` and explicitly disclose that the fixed Viewer UI and `<html lang>` fall back to English. The renderer never translates authored content. See `references/authoring-contract.md` for details.
 - Preserve exact product names, code identifiers, commands, protocols, API paths, and environment names. They may remain English inside localized copy, but never justify leaving the surrounding explanatory prose in another language.
@@ -117,7 +120,7 @@ Never start preview by default. Read `references/delivery-contract.md` when usin
 
 ## Optional viewer capabilities
 
-Generated HTML already contains theme switching, pan/zoom, search, focus, relationship tracing, semantic views, presentation, and truthful exports. These are reader capabilities, not extra authoring work. `meta.animation: "trace"` is opt-in; `meta.views` is optional and should contain at most five curated chapters.
+Generated HTML already contains theme switching, the infinite canvas camera (drag or scroll to pan, Ctrl/⌘+scroll or pinch to zoom, `0` fit, `1` real size), search, focus, relationship tracing, semantic views, presentation, and truthful exports. These are reader capabilities, not extra authoring work. `meta.animation: "trace"` is opt-in; `meta.views` is optional, holds up to twelve curated chapters, and is the main way a reader tours a large plane, so give every major region or flow of a big diagram its own chapter.
 
 Read `references/viewer-runtime.md` only when the user explicitly asks for Share Cards, Route/Reach cards, motion, guided stories, deep links, presentation, search/focus, or another Viewer Runtime feature.
 
@@ -130,7 +133,7 @@ node bin/archify.mjs doctor
 node bin/archify.mjs demo <output-directory>
 ```
 
-When shell access is unavailable, hand-place architecture SVG into `assets/template.html`, use CSS semantic classes rather than inline colors, and follow the visual review contract in `references/delivery-contract.md`.
+When shell access is unavailable, hand-place architecture SVG into `assets/template.html`, add `data-layout="canvas"` to its `<html>` tag, use CSS semantic classes rather than inline colors, and follow the visual review contract in `references/delivery-contract.md`.
 
 ## Output
 

@@ -43,3 +43,7 @@ After a non-empty authored reachability query, the reader may use **Export → R
 ## Truth boundary
 
 Viewer exports are communication assets. They do not replace the checked HTML, the deterministic delivery receipt, or a real visual review. Do not add a hosted service, storage surface, dependency, schema branch, or mobile product surface for these viewer-only capabilities.
+
+## Infinite canvas (CyberFitz fork default)
+
+The diagram owns the viewport; title, chapters, and Notes (the summary cards) float above it. Drag or scroll pans, Ctrl/⌘+scroll or pinch zooms about the cursor, `+`/`-` step, arrow keys nudge, `0` fits everything, and `1` shows authored real size. Zoom runs from 20% of fit to 400% of real pixels, the percent readout is real pixels, and MAP/READ/FULL detail follows real-pixel scale (below 55%, from 55%, from 120%). Semantic camera moves (focus, finder, chapters, routes) may zoom to real size on a large plane. Embeds (`?embed=1`) and print keep the page reader. `meta.layout_mode: "page"` opts a document out.
