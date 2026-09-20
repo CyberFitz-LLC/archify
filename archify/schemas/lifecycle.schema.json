@@ -166,7 +166,7 @@
           "col": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 4
+            "maximum": 47
           },
           "width": {
             "type": "number",

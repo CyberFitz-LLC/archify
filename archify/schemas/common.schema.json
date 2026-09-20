@@ -82,7 +82,7 @@
     },
     "guidedViews": {
       "type": "array",
-      "maxItems": 5,
+      "maxItems": 12,
       "items": {
         "type": "object",
         "additionalProperties": false,

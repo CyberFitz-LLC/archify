@@ -61,6 +61,16 @@ const layout = {
   eventXs: [402, 556, 710],
   outcomeXs: [402, 556, 710]
 };
+// CyberFitz fork: the main rail is not capped at five phases. Every 154px of
+// viewBox width beyond the upstream 980 adds a phase column, and the event and
+// outcome bands keep their contract (band column N sits under main column N+2).
+// At the default width this reproduces the upstream columns exactly.
+{
+  const extraColumns = Math.max(0, Math.floor((viewBox[0] - 980) / 154));
+  for (let index = 0; index < extraColumns; index += 1) layout.phaseXs.push(layout.phaseXs.at(-1) + 154);
+  layout.eventXs = layout.phaseXs.slice(2);
+  layout.outcomeXs = layout.phaseXs.slice(2);
+}
 
 const typeClass = {
   start: 'c-frontend',

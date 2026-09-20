@@ -93,7 +93,7 @@
     "stages": {
       "type": "array",
       "minItems": 2,
-      "maxItems": 5,
+      "maxItems": 48,
       "items": {
         "type": "object",
         "additionalProperties": false,

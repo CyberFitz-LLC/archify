@@ -157,7 +157,15 @@ function verticalIntervalsOverlap(a, b, clearance = 0) {
 }
 
 function createReadableLayout(workflow, layoutFeedback = {}) {
-  const columnCount = 6;
+  // CyberFitz fork: readable-v2 workflows are not capped at six columns. The
+  // column count follows the authored content, so a long process can run as
+  // far across the canvas as it needs. Six stays the floor, which keeps every
+  // upstream-sized workflow byte-identical.
+  const columnCount = Math.max(6, 1 + Math.max(-1,
+    ...asArray(workflow.nodes).map((node) => (Number.isInteger(node?.col) ? node.col : -1)),
+    ...asArray(workflow.phases).map((phase) => (Number.isInteger(phase?.toCol) ? phase.toCol : -1)),
+    ...asArray(workflow.groups).map((group) => (Number.isInteger(group?.toCol) ? group.toCol : -1)),
+  ));
   const baselinePitch = 120;
   const columnStart = 94;
   const maxLayoutIterations = 3;

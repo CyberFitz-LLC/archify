@@ -368,6 +368,7 @@
           top = Math.max(top, visibleTop + padding);
           bottom = Math.min(bottom, visibleBottom - Math.max(padding, 72));
         }
+        if (canvas) top = Math.max(top, Archify.canvas.topInset());
         var chip = document.getElementById('focus-chip');
         if (chip && !chip.hidden) {
           var lensEnd = chip.offsetLeft + chip.offsetWidth + 24 - (svg.offsetLeft || 0);

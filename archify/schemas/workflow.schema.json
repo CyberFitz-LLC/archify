@@ -155,12 +155,12 @@
           "fromCol": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 5
+            "maximum": 47
           },
           "toCol": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 5
+            "maximum": 47
           },
           "variant": {
             "enum": [
@@ -199,12 +199,12 @@
           "fromCol": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 5
+            "maximum": 47
           },
           "toCol": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 5
+            "maximum": 47
           },
           "variant": {
             "enum": [
@@ -278,7 +278,7 @@
           "col": {
             "type": "integer",
             "minimum": 0,
-            "maximum": 5
+            "maximum": 47
           },
           "type": {
             "$ref": "common.schema.json#/$defs/componentType"

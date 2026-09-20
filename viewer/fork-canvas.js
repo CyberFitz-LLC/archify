@@ -88,17 +88,22 @@
         Archify.view.panBy(move[0], move[1]);
       }
 
-      // Summary cards become a collapsible Notes drawer so they never cover the
-      // plane unless the reader asks for them.
+      // Summary cards become a Notes drawer that opens from the title plate, so
+      // they never cover the plane unless the reader asks for them and never
+      // compete with the route, lens and radar panels along the bottom edge.
       function mountNotes() {
-        if (!cards || !cards.children.length) return;
+        var header = document.querySelector('.header');
+        var row = header && header.querySelector('.header-row');
+        if (!cards || !cards.children.length || !row) return;
         var drawer = document.createElement('section');
         drawer.className = 'canvas-notes no-print';
-        drawer.setAttribute('data-open', 'false');
+        drawer.id = 'canvas-notes';
+        drawer.hidden = true;
         var toggle = document.createElement('button');
         toggle.type = 'button';
-        toggle.className = 'canvas-notes-toggle';
+        toggle.className = 'canvas-notes-toggle no-print';
         toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', 'canvas-notes');
         var label = document.createElement('span');
         label.textContent = 'Notes';
         var count = document.createElement('span');
@@ -106,14 +111,67 @@
         count.textContent = String(cards.querySelectorAll('.card').length || cards.children.length);
         toggle.appendChild(label);
         toggle.appendChild(count);
+        row.appendChild(toggle);
         cards.parentNode.insertBefore(drawer, cards);
-        drawer.appendChild(toggle);
         drawer.appendChild(cards);
-        toggle.addEventListener('click', function () {
-          var open = drawer.getAttribute('data-open') !== 'true';
-          drawer.setAttribute('data-open', open ? 'true' : 'false');
+        function setOpen(open) {
+          drawer.hidden = !open;
           toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        toggle.addEventListener('click', function () { setOpen(drawer.hidden); });
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && !drawer.hidden && !event.defaultPrevented) setOpen(false);
         });
+      }
+      // Panels inside the plane (finder, focus chip, guide) anchor to its top
+      // edge, which the floating title and chapters now occupy. Publish the
+      // real chrome height so they open beneath it at any width or language.
+      function measureChrome() {
+        if (!container) return;
+        var bottom = 0;
+        ['.header', '#guided-views', '.toolbar'].forEach(function (selector) {
+          var element = document.querySelector(selector);
+          if (!element || element.hidden) return;
+          var rect = element.getBoundingClientRect();
+          if (rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+        });
+        container.style.setProperty('--archify-canvas-top', Math.round(bottom + 12) + 'px');
+      }
+      function watchChrome() {
+        measureChrome();
+        window.addEventListener('resize', measureChrome, { passive: true });
+        if (typeof ResizeObserver === 'function') {
+          var observer = new ResizeObserver(measureChrome);
+          ['.header', '#guided-views', '.toolbar'].forEach(function (selector) {
+            var element = document.querySelector(selector);
+            if (element) observer.observe(element);
+          });
+        }
+        var guided = document.getElementById('guided-views');
+        if (guided && typeof MutationObserver === 'function') {
+          new MutationObserver(measureChrome).observe(guided, { attributes: true, attributeFilter: ['hidden'] });
+        }
+      }
+
+      // Floating chapters cover the top of the plane, so semantic camera frames
+      // are inset to land below them.
+      function topInset() {
+        var guided = document.getElementById('guided-views');
+        if (!container || !guided || guided.hidden) return 0;
+        var style = window.getComputedStyle(container);
+        var box = container.getBoundingClientRect();
+        var edge = guided.getBoundingClientRect().bottom - box.top - (parseFloat(style.paddingTop) || 0);
+        return Math.max(0, edge + 16);
+      }
+      // The guide dialog is where readers look for controls; tell them how the
+      // plane moves. English only: the fork has not localised this line.
+      function mountGuideHint() {
+        var guide = document.getElementById('diagram-guide');
+        if (!guide) return;
+        var hint = document.createElement('p');
+        hint.className = 'canvas-guide-hint';
+        hint.textContent = 'Infinite canvas: drag or scroll to pan · Ctrl/⌘ + scroll or pinch to zoom · 0 fits everything · 1 shows real size · arrow keys nudge.';
+        guide.appendChild(hint);
       }
 
       if (container) {
@@ -126,6 +184,8 @@
       }
       document.addEventListener('keydown', onKey);
       mountNotes();
+      mountGuideHint();
+      watchChrome();
 
       return {
         enabled: true,
@@ -133,6 +193,7 @@
         maxScale: maxScale,
         readableScale: readableScale,
         detailLevel: detailLevel,
+        topInset: topInset,
         paint: paint
       };
     })();

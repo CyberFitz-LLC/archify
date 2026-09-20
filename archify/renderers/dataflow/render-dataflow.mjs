@@ -58,7 +58,13 @@ const layout = {
   stageW: 168,
   nodeW: 112,
   nodeH: 58,
-  rowYs: [128, 242, 356, 470, 584],
+  // CyberFitz fork: rows follow the authored viewBox height instead of stopping
+  // at five. 128 + 114n reproduces the upstream rows exactly, so the default
+  // 720px plane is unchanged and a taller plane simply gains rows.
+  rowYs: Array.from(
+    { length: Math.max(5, Math.floor((viewBox[1] - 74 - 58 - 128) / 114) + 1) },
+    (_, row) => 128 + row * 114,
+  ),
   labelH: 16
 };
 
