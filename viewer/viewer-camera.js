@@ -28,8 +28,8 @@
         var metrics = contentMetrics();
         return metrics && metrics.scale > 0 ? metrics.scale : 1;
       }
-      function minScale() { return canvas ? Archify.canvas.minScale(fitScale()) : 1; }
-      function maxScale() { return canvas ? Archify.canvas.maxScale(fitScale()) : 3; }
+      function minCameraScale() { return canvas ? Archify.canvas.minScale(fitScale()) : 1; }
+      function maxCameraScale() { return canvas ? Archify.canvas.maxScale(fitScale()) : 3; }
       function clamp() {
         var width = svg.clientWidth || 1;
         var height = svg.clientHeight || 1;
@@ -158,8 +158,8 @@
         svg.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.scale + ')';
         syncViewportClip();
         renderControls();
-        outBtn.disabled = state.scale <= minScale() + 0.0005;
-        inBtn.disabled = state.scale >= maxScale() - 0.0005;
+        outBtn.disabled = state.scale <= minCameraScale() + 0.0005;
+        inBtn.disabled = state.scale >= maxCameraScale() - 0.0005;
         container.classList.toggle('is-pannable', canvas || state.scale > 1);
         if (canvas) Archify.canvas.paint(state, fitScale());
         svg.setAttribute('data-view-scale', String(state.scale));
@@ -263,7 +263,7 @@
         if (options.manual !== false) interruptCamera();
         var previous = state.scale;
         next = canvas
-          ? Math.max(minScale(), Math.min(maxScale(), next))
+          ? Math.max(minCameraScale(), Math.min(maxCameraScale(), next))
           : Math.max(1, Math.min(3, Math.round(next * 4) / 4));
         if (next === previous) return;
         var centerX = options.anchor ? options.anchor.x : (svg.clientWidth || 1) / 2;
@@ -302,10 +302,10 @@
           catch (_) { container.scrollLeft = mobileTarget; }
           return true;
         }
-        var minimumScale = Math.max(1, Math.min(maxScale(), Number(options.minimumScale) || 1));
-        if (canvas) minimumScale = Math.max(minimumScale, Math.min(maxScale(), Archify.canvas.readableScale(fitScale())));
+        var minimumScale = Math.max(1, Math.min(maxCameraScale(), Number(options.minimumScale) || 1));
+        if (canvas) minimumScale = Math.max(minimumScale, Math.min(maxCameraScale(), Archify.canvas.readableScale(fitScale())));
         var requestedScale = Number(options.scale);
-        state.scale = Math.max(minimumScale, Math.min(maxScale(), Number.isFinite(requestedScale) ? requestedScale : state.scale));
+        state.scale = Math.max(minimumScale, Math.min(maxCameraScale(), Number.isFinite(requestedScale) ? requestedScale : state.scale));
         var contentX = metrics.offsetX + (logicalX - viewBox.x) * metrics.scale;
         var contentY = metrics.offsetY + (logicalY - viewBox.y) * metrics.scale;
         state.x = metrics.width / 2 - contentX * state.scale;
@@ -381,12 +381,12 @@
           else bottom = Math.min(bottom, receiptTop - 24);
         }
         if (right <= left || bottom <= top) return false;
-        var frameMaxScale = options.maxScale || (options.includeNeighbors ? 1.9 : 2.15);
+        var maxScale = options.maxScale || (options.includeNeighbors ? 1.9 : 2.15);
         // On a large canvas "fit" can be far below reading size, so a semantic
         // frame may zoom as far as real-pixel reading scale needs.
-        if (canvas) frameMaxScale = Math.max(frameMaxScale, Archify.canvas.readableScale(fitScale()) * (options.includeNeighbors ? 1 : 1.15));
+        if (canvas) maxScale = Math.max(maxScale, Archify.canvas.readableScale(fitScale()) * (options.includeNeighbors ? 1 : 1.15));
         var targetScale = Math.min((right - left) / bounds.width, (bottom - top) / bounds.height) * 0.9;
-        targetScale = Math.max(1, Math.min(frameMaxScale, targetScale));
+        targetScale = Math.max(1, Math.min(maxScale, targetScale));
         if (targetScale < 1.08) targetScale = 1;
         var target = {
           scale: Math.round(targetScale * 100) / 100,

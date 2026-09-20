@@ -9,8 +9,8 @@ const output = path.join(root, 'archify/assets/template.html');
 const fragments = [
   ['/* ARCHIFY:EXPORT */', 'export.js'],
   // CyberFitz fork: infinite canvas reader (policy + input, then layout CSS).
-  ['/* ARCHIFY:FORK_CANVAS */', 'fork-canvas.js'],
-  ['/* ARCHIFY:FORK_CANVAS_CSS */', 'fork-canvas.css'],
+  ['/* ARCHIFY:FORK_CANVAS */', 'fork-canvas.js', { optional: true }],
+  ['/* ARCHIFY:FORK_CANVAS_CSS */', 'fork-canvas.css', { optional: true }],
   ['/* ARCHIFY:READER_LAYOUT */', 'reader-layout.js'],
   ['/* ARCHIFY:CHROME_LAYOUT */', 'viewer-chrome-layout.js'],
   ['/* ARCHIFY:CAMERA */', 'viewer-camera.js'],
@@ -31,7 +31,9 @@ try {
     throw new Error('Usage: node scripts/generate-viewer.mjs [--check]');
   }
   let generated = fs.readFileSync(path.join(root, 'viewer/template.source.html'), 'utf8');
-  for (const [marker, filename] of fragments) {
+  for (const [marker, filename, options = {}] of fragments) {
+    // Fork fragments are optional so upstream-shaped shells still assemble.
+    if (options.optional && !generated.includes(marker)) continue;
     const source = fs.readFileSync(path.join(root, 'viewer', filename), 'utf8');
     const parts = generated.split(marker);
     if (parts.length !== 2) throw new Error(`Viewer source must contain exactly one ${filename} marker.`);

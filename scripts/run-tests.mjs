@@ -19,9 +19,13 @@ const args = ['--test'];
 if (supportsConcurrencyFlag) args.push('--test-concurrency=2');
 args.push(...testFiles);
 
+// CyberFitz fork: the inherited upstream suite asserts the page reader, so it
+// runs with the page default. Fork canvas tests author meta.layout_mode
+// explicitly, and the goldens (run before this script) use the fork default.
 const result = spawnSync(process.execPath, args, {
   cwd: skillRoot,
   stdio: 'inherit',
+  env: { ARCHIFY_DEFAULT_LAYOUT: 'page', ...process.env },
 });
 
 if (result.error) throw result.error;

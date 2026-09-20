@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark" data-preset="classic">
+<html lang="en" data-theme="dark" data-preset="classic" data-layout="canvas">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -4972,6 +4972,182 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       .source-evidence-beacon,
       svg [data-node-id], svg [data-edge-from], svg [data-detail], svg [data-detail-anchor], svg [data-legend-hit], svg { transition: none !important; }
     }
+    /* ============================================================
+       CyberFitz fork — Infinite Canvas reader layout.
+       Screen only: print and embeds keep the upstream page reader.
+       Specificity matches the upstream presentation rules on purpose, and this
+       block is assembled last so it wins without !important.
+       ============================================================ */
+    @media screen {
+      html[data-layout="canvas"]:not([data-embed="true"]) body {
+        height: 100dvh;
+        min-height: 0;
+        padding: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .container {
+        display: block;
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        margin: 0;
+      }
+
+      /* The plane. Gutters keep "fit" clear of the floating chrome, while the
+         zoomed diagram still paints across them. */
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        display: block;
+        margin: 0;
+        padding: 5.25rem 1.5rem 4.5rem;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background-color: var(--bg);
+        background-image: radial-gradient(circle, color-mix(in srgb, var(--text-muted) 34%, transparent) 1px, transparent 1.4px);
+        background-size: var(--archify-canvas-grid, 32px) var(--archify-canvas-grid, 32px);
+        background-position: var(--archify-canvas-x, 0px) var(--archify-canvas-y, 0px);
+        background-origin: content-box;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container::before,
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container::after { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container.is-panning { cursor: grabbing; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container > svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        overflow: visible;
+        /* Wheel and pinch input is continuous; easing it makes the plane lag
+           behind the hand. Semantic camera moves animate frame by frame. */
+        transition: none;
+      }
+      /* The authored grid rectangle would draw the viewBox as a tile floating
+         on the plane; the canvas supplies its own endless grid instead. */
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container > svg > rect[fill="url(#grid)"] { display: none; }
+
+      /* Floating chrome */
+      html[data-layout="canvas"]:not([data-embed="true"]) .header {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 90;
+        max-width: min(34rem, calc(100vw - 31rem));
+        margin: 0;
+        padding: 0.55rem 0.9rem 0.6rem;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.75rem;
+        background: var(--toolbar-bg);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .header-row { margin-bottom: 0; flex-wrap: nowrap; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .header-row::after { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) h1 {
+        min-width: 0;
+        overflow: hidden;
+        font-size: 1rem;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .subtitle {
+        margin-top: 0.15rem;
+        overflow: hidden;
+        font-size: 0.75rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .guided-views {
+        position: fixed;
+        top: 4.6rem;
+        left: 1rem;
+        right: 1rem;
+        z-index: 80;
+        max-width: 72rem;
+        margin: 0 auto;
+        backdrop-filter: blur(10px);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .guided-views:not([hidden]) ~ .diagram-container {
+        padding-top: 9.5rem;
+      }
+
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes {
+        position: fixed;
+        left: 1rem;
+        bottom: 1rem;
+        z-index: 85;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: min(26rem, calc(100vw - 2rem));
+        max-height: calc(100dvh - 7rem);
+        pointer-events: none;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes > * { pointer-events: auto; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.25rem;
+        padding: 0 0.8rem;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.58rem;
+        background: var(--toolbar-bg);
+        color: var(--toolbar-text);
+        font: inherit;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-count {
+        min-width: 1.25rem;
+        padding: 0.05rem 0.3rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+        text-align: center;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .cards {
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.6rem;
+        overflow: auto;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.75rem;
+        background: var(--toolbar-bg);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes[data-open="true"] .cards { display: grid; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .card { padding: 0.8rem 0.9rem; }
+      html[data-layout="canvas"][data-present="true"]:not([data-embed="true"]) .canvas-notes { display: none; }
+
+      @media (max-width: 720px) {
+        html[data-layout="canvas"]:not([data-embed="true"]) .header {
+          top: 4rem;
+          max-width: calc(100vw - 2rem);
+        }
+        html[data-layout="canvas"]:not([data-embed="true"]) .subtitle { display: none; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .guided-views { top: 7.25rem; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container { padding: 7.5rem 0.75rem 8rem; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes { bottom: 4.5rem; }
+      }
+    }
+
   </style>
 </head>
 <body>
@@ -11081,6 +11257,145 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       });
     };
 
+    /* ============================================================
+       CyberFitz fork — Infinite Canvas reader.
+
+       The diagram owns the whole viewport. The camera pans freely and zooms
+       across a wide range, so an authored viewBox can be as large as the
+       subject needs instead of being squeezed into a first screen. Title,
+       chapters and summary cards float above the canvas as chrome.
+
+       This fragment only declares policy and input; the camera itself stays in
+       viewer-camera.js and asks Archify.canvas for its limits. Embeds keep the
+       upstream boxed reader because an iframe is not a canvas.
+       ============================================================ */
+    Archify.canvas = (function () {
+      var html = document.documentElement;
+      var enabled = html.getAttribute('data-layout') === 'canvas' &&
+        html.getAttribute('data-embed') !== 'true';
+      var container = document.querySelector('.diagram-container');
+      var cards = document.querySelector('.cards');
+      var GRID = 32;
+      var READ_PX = 1;      // real-pixel scale at which authored type is read as drawn
+      var MAX_PX = 4;       // deepest zoom, in real pixels
+      var MIN_FIT = 0.2;    // farthest zoom-out, as a fraction of "fit everything"
+
+      if (!enabled) {
+        if (html.getAttribute('data-layout') === 'canvas') html.setAttribute('data-layout', 'page');
+        return { enabled: false };
+      }
+
+      function minScale() { return MIN_FIT; }
+      function maxScale(fit) { return Math.max(3, MAX_PX / (fit || 1)); }
+      function readableScale(fit) { return Math.max(1, READ_PX / (fit || 1)); }
+      function detailLevel(pixelScale) {
+        if (pixelScale >= 1.2) return 'full';
+        if (pixelScale >= 0.55) return 'read';
+        return 'map';
+      }
+      // The dot grid is part of the plane, not the screen: it moves and scales
+      // with the camera so panning reads as travelling across one surface.
+      function paint(state, fit) {
+        if (!container) return;
+        var pixel = state.scale * (fit || 1);
+        var step = GRID * pixel;
+        while (step < 14) step *= 4;
+        while (step > 96) step /= 4;
+        container.style.setProperty('--archify-canvas-grid', step.toFixed(3) + 'px');
+        container.style.setProperty('--archify-canvas-x', state.x.toFixed(2) + 'px');
+        container.style.setProperty('--archify-canvas-y', state.y.toFixed(2) + 'px');
+      }
+
+      function overChrome(target) {
+        return Boolean(target && target.closest &&
+          target.closest('.diagram-nav, .focus-chip, .node-finder, .diagram-guide, .overview-map, .route-probe, .semantic-lens, .canvas-notes, .guided-views, .toolbar'));
+      }
+      function onWheel(event) {
+        if (!Archify.view || overChrome(event.target)) return;
+        event.preventDefault();
+        var unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? window.innerHeight : 1;
+        var dx = event.deltaX * unit;
+        var dy = event.deltaY * unit;
+        if (event.ctrlKey || event.metaKey) {
+          // Trackpad pinch arrives as ctrl+wheel with small deltas; a mouse
+          // wheel arrives in large notches, so a notch is a fixed ~20% step.
+          var notch = Math.abs(dy) >= 50;
+          var power = notch ? (dy > 0 ? 0.18 : -0.18) : Math.max(-0.3, Math.min(0.3, dy * 0.01));
+          Archify.view.zoomAt(event.clientX, event.clientY, Math.exp(-power));
+        } else if (event.shiftKey && !dx) {
+          Archify.view.panBy(-dy, 0);
+        } else {
+          Archify.view.panBy(-dx, -dy);
+        }
+      }
+      function onKey(event) {
+        if (event.metaKey || event.ctrlKey || event.altKey || event.defaultPrevented || !Archify.view) return;
+        var t = event.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return;
+        if (t && t.closest && t.closest('[role="dialog"], [role="menu"], [role="listbox"], .overview-map-surface')) return;
+        if (event.key === '1') {
+          event.preventDefault();
+          Archify.view.actualSize();
+          return;
+        }
+        var step = event.shiftKey ? 240 : 80;
+        var move = {
+          ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step]
+        }[event.key];
+        if (!move || (t && t !== document.body && t !== container && !(t.closest && t.closest('svg')))) return;
+        event.preventDefault();
+        Archify.view.panBy(move[0], move[1]);
+      }
+
+      // Summary cards become a collapsible Notes drawer so they never cover the
+      // plane unless the reader asks for them.
+      function mountNotes() {
+        if (!cards || !cards.children.length) return;
+        var drawer = document.createElement('section');
+        drawer.className = 'canvas-notes no-print';
+        drawer.setAttribute('data-open', 'false');
+        var toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'canvas-notes-toggle';
+        toggle.setAttribute('aria-expanded', 'false');
+        var label = document.createElement('span');
+        label.textContent = 'Notes';
+        var count = document.createElement('span');
+        count.className = 'canvas-notes-count';
+        count.textContent = String(cards.querySelectorAll('.card').length || cards.children.length);
+        toggle.appendChild(label);
+        toggle.appendChild(count);
+        cards.parentNode.insertBefore(drawer, cards);
+        drawer.appendChild(toggle);
+        drawer.appendChild(cards);
+        toggle.addEventListener('click', function () {
+          var open = drawer.getAttribute('data-open') !== 'true';
+          drawer.setAttribute('data-open', open ? 'true' : 'false');
+          toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+      }
+
+      if (container) {
+        container.addEventListener('wheel', onWheel, { passive: false });
+        // Safari reports trackpad pinch as gesture events; without this the
+        // page itself zooms and the canvas chrome scales with it.
+        ['gesturestart', 'gesturechange'].forEach(function (name) {
+          container.addEventListener(name, function (event) { event.preventDefault(); });
+        });
+      }
+      document.addEventListener('keydown', onKey);
+      mountNotes();
+
+      return {
+        enabled: true,
+        minScale: minScale,
+        maxScale: maxScale,
+        readableScale: readableScale,
+        detailLevel: detailLevel,
+        paint: paint
+      };
+    })();
+
     Archify.readerLayout = (function () {
       var html = document.documentElement;
       var body = document.body;
@@ -11101,7 +11416,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var MAX_READER_WIDTH = 1920;
       var SAFE_BOTTOM_GAP = 12;
 
-      if (diagram && ratio >= WIDE_RATIO) {
+      // CyberFitz fork: the infinite canvas owns the whole viewport, so the
+      // adaptive page reader (and its mobile wide-diagram scroller) stands down.
+      var canvasLayout = Boolean(Archify.canvas && Archify.canvas.enabled);
+      if (diagram && ratio >= WIDE_RATIO && !canvasLayout) {
         diagram.setAttribute('data-wide-diagram', 'true');
         html.setAttribute('data-diagram-shape', 'wide');
       }
@@ -11120,6 +11438,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function eligible() {
         return Boolean(
+          !canvasLayout &&
           shell && diagram && svg && ratio >= WIDE_RATIO &&
           window.innerWidth >= MIN_DESKTOP_WIDTH &&
           html.getAttribute('data-embed') !== 'true' &&
@@ -11333,6 +11652,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function eligible() {
         return Boolean(
+          !(Archify.canvas && Archify.canvas.enabled) &&
           container && svg && nav &&
           window.innerWidth > 720 &&
           html.getAttribute('data-embed') !== 'true' &&
@@ -11581,10 +11901,30 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       var autoScrollUntil = 0;
 
       var viewBox = svg.viewBox && svg.viewBox.baseVal;
+      // CyberFitz fork: on the infinite canvas the camera is unbounded. Scale
+      // stays relative to "fit" (1 = whole viewBox fitted), but the range is
+      // derived from real pixels so any authored viewBox can be read at 100%.
+      var canvas = Boolean(Archify.canvas && Archify.canvas.enabled);
+      var pinch = null;
+      var touches = Object.create(null);
 
+      function fitScale() {
+        var metrics = contentMetrics();
+        return metrics && metrics.scale > 0 ? metrics.scale : 1;
+      }
+      function minCameraScale() { return canvas ? Archify.canvas.minScale(fitScale()) : 1; }
+      function maxCameraScale() { return canvas ? Archify.canvas.maxScale(fitScale()) : 3; }
       function clamp() {
         var width = svg.clientWidth || 1;
         var height = svg.clientHeight || 1;
+        if (canvas) {
+          // Free pan: only keep a sliver of the authored plane reachable so the
+          // diagram can never be lost off-screen.
+          var keep = Math.min(120, width / 4, height / 4);
+          state.x = Math.min(width - keep, Math.max(keep - width * state.scale, state.x));
+          state.y = Math.min(height - keep, Math.max(keep - height * state.scale, state.y));
+          return;
+        }
         state.x = Math.min(0, Math.max(width - width * state.scale, state.x));
         state.y = Math.min(0, Math.max(height - height * state.scale, state.y));
       }
@@ -11630,6 +11970,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function detailLevel() {
         if (state.mode === 'semantic') return 'full';
+        if (canvas) return Archify.canvas.detailLevel(state.scale * fitScale());
         if (state.scale >= 1.75) return 'full';
         if (state.scale >= 1) return 'read';
         return 'map';
@@ -11637,7 +11978,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       function renderControls() {
         var semantic = state.mode === 'semantic' && state.scale > 1.01;
         var detail = detailLevel();
-        var percent = Math.round(state.scale * 100) + '%';
+        var percent = Math.round(state.scale * (canvas ? fitScale() : 1) * 100) + '%';
         var levelLabel = viewerText('viewer.nav.level.' + detail);
         var detailHint = detail === 'map'
           ? viewerText('viewer.nav.detail.map')
@@ -11664,7 +12005,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       function clipToViewport(camera) {
         camera = camera || state;
-        if (camera.scale <= 1.001) {
+        // The canvas paints across its chrome gutters, so it never clips to the SVG box.
+        if (canvas || camera.scale <= 1.001) {
           svg.style.removeProperty('clip-path');
           return;
         }
@@ -11700,9 +12042,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         svg.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.scale + ')';
         syncViewportClip();
         renderControls();
-        outBtn.disabled = state.scale <= 1;
-        inBtn.disabled = state.scale >= 3;
-        container.classList.toggle('is-pannable', state.scale > 1);
+        outBtn.disabled = state.scale <= minCameraScale() + 0.0005;
+        inBtn.disabled = state.scale >= maxCameraScale() - 0.0005;
+        container.classList.toggle('is-pannable', canvas || state.scale > 1);
+        if (canvas) Archify.canvas.paint(state, fitScale());
         svg.setAttribute('data-view-scale', String(state.scale));
         if (Archify.radar && typeof Archify.radar.sync === 'function') Archify.radar.sync();
         if (Archify.viewerChromeLayout && typeof Archify.viewerChromeLayout.schedule === 'function') {
@@ -11803,10 +12146,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         options = options || {};
         if (options.manual !== false) interruptCamera();
         var previous = state.scale;
-        next = Math.max(1, Math.min(3, Math.round(next * 4) / 4));
+        next = canvas
+          ? Math.max(minCameraScale(), Math.min(maxCameraScale(), next))
+          : Math.max(1, Math.min(3, Math.round(next * 4) / 4));
         if (next === previous) return;
-        var centerX = (svg.clientWidth || 1) / 2;
-        var centerY = (svg.clientHeight || 1) / 2;
+        var centerX = options.anchor ? options.anchor.x : (svg.clientWidth || 1) / 2;
+        var centerY = options.anchor ? options.anchor.y : (svg.clientHeight || 1) / 2;
         var contentX = (centerX - state.x) / previous;
         var contentY = (centerY - state.y) / previous;
         state.scale = next;
@@ -11841,9 +12186,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           catch (_) { container.scrollLeft = mobileTarget; }
           return true;
         }
-        var minimumScale = Math.max(1, Math.min(3, Number(options.minimumScale) || 1));
+        var minimumScale = Math.max(1, Math.min(maxCameraScale(), Number(options.minimumScale) || 1));
+        if (canvas) minimumScale = Math.max(minimumScale, Math.min(maxCameraScale(), Archify.canvas.readableScale(fitScale())));
         var requestedScale = Number(options.scale);
-        state.scale = Math.max(minimumScale, Math.min(3, Number.isFinite(requestedScale) ? requestedScale : state.scale));
+        state.scale = Math.max(minimumScale, Math.min(maxCameraScale(), Number.isFinite(requestedScale) ? requestedScale : state.scale));
         var contentX = metrics.offsetX + (logicalX - viewBox.x) * metrics.scale;
         var contentY = metrics.offsetY + (logicalY - viewBox.y) * metrics.scale;
         state.x = metrics.width / 2 - contentX * state.scale;
@@ -11920,6 +12266,9 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
         if (right <= left || bottom <= top) return false;
         var maxScale = options.maxScale || (options.includeNeighbors ? 1.9 : 2.15);
+        // On a large canvas "fit" can be far below reading size, so a semantic
+        // frame may zoom as far as real-pixel reading scale needs.
+        if (canvas) maxScale = Math.max(maxScale, Archify.canvas.readableScale(fitScale()) * (options.includeNeighbors ? 1 : 1.15));
         var targetScale = Math.min((right - left) / bounds.width, (bottom - top) / bounds.height) * 0.9;
         targetScale = Math.max(1, Math.min(maxScale, targetScale));
         if (targetScale < 1.08) targetScale = 1;
@@ -12031,6 +12380,10 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
       }
       function onPointerEnd(event) {
+        if (touches[event.pointerId]) {
+          delete touches[event.pointerId];
+          pinch = null;
+        }
         if (!drag) return;
         var moved = drag.moved;
         drag = null;
@@ -12042,17 +12395,72 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         }
       }
 
-      inBtn.addEventListener('click', function () { zoom(state.scale + 0.25); });
-      outBtn.addEventListener('click', function () { zoom(state.scale - 0.25); });
+      function stepIn() { zoom(canvas ? state.scale * 1.25 : state.scale + 0.25); }
+      function stepOut() { zoom(canvas ? state.scale / 1.25 : state.scale - 0.25); }
+      function localPoint(clientX, clientY) {
+        // The SVG's untransformed layout box is the container's content box.
+        var rect = container.getBoundingClientRect();
+        var style = window.getComputedStyle(container);
+        return {
+          x: clientX - rect.left - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.paddingLeft) || 0),
+          y: clientY - rect.top - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.paddingTop) || 0)
+        };
+      }
+      function zoomAt(clientX, clientY, factor) {
+        if (!Number.isFinite(factor) || factor <= 0) return;
+        zoom(state.scale * factor, { anchor: localPoint(clientX, clientY) });
+      }
+      function panBy(dx, dy) {
+        if (!Number.isFinite(dx) || !Number.isFinite(dy) || (!dx && !dy)) return;
+        interruptCamera();
+        state.x += dx;
+        state.y += dy;
+        apply();
+      }
+      function actualSize() {
+        zoom(1 / fitScale());
+      }
+      inBtn.addEventListener('click', stepIn);
+      outBtn.addEventListener('click', stepOut);
       resetBtn.addEventListener('click', reset);
       container.addEventListener('pointerdown', function (event) {
-        if (state.scale <= 1 || event.button !== 0 || event.target.closest('.diagram-nav, .focus-chip, .node-finder, .diagram-guide, .overview-map, .route-probe, .semantic-lens') || event.target.closest('[data-node-id]') || event.target.closest('[data-relationship-hit-key]')) return;
+        if (canvas && event.pointerType === 'touch') {
+          touches[event.pointerId] = { x: event.clientX, y: event.clientY };
+          var ids = Object.keys(touches);
+          if (ids.length === 2) {
+            var a = touches[ids[0]];
+            var b = touches[ids[1]];
+            drag = null;
+            container.classList.remove('is-panning');
+            interruptCamera();
+            pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+            return;
+          }
+        }
+        if ((!canvas && state.scale <= 1) || event.button !== 0 || event.target.closest('.diagram-nav, .focus-chip, .node-finder, .diagram-guide, .overview-map, .route-probe, .semantic-lens') || event.target.closest('[data-node-id]') || event.target.closest('[data-relationship-hit-key]')) return;
         interruptCamera();
         drag = { startX: event.clientX, startY: event.clientY, x: state.x, y: state.y, moved: false };
         container.classList.add('is-panning');
         try { container.setPointerCapture(event.pointerId); } catch (_) {}
       });
       container.addEventListener('pointermove', function (event) {
+        if (canvas && touches[event.pointerId]) {
+          touches[event.pointerId] = { x: event.clientX, y: event.clientY };
+          var ids = Object.keys(touches);
+          if (pinch && ids.length === 2) {
+            var a = touches[ids[0]];
+            var b = touches[ids[1]];
+            var distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+            var midX = (a.x + b.x) / 2;
+            var midY = (a.y + b.y) / 2;
+            state.x += midX - pinch.x;
+            state.y += midY - pinch.y;
+            zoom(state.scale * (distance / pinch.distance), { manual: false, anchor: localPoint(midX, midY) });
+            pinch = { distance: distance, x: midX, y: midY };
+            apply();
+            return;
+          }
+        }
         if (!drag) return;
         var dx = event.clientX - drag.startX;
         var dy = event.clientY - drag.startY;
@@ -12078,8 +12486,12 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       requestAnimationFrame(syncSemantic);
 
       return {
-        zoomIn: function () { zoom(state.scale + 0.25); },
-        zoomOut: function () { zoom(state.scale - 0.25); },
+        zoomIn: stepIn,
+        zoomOut: stepOut,
+        zoomAt: zoomAt,
+        panBy: panBy,
+        actualSize: actualSize,
+        fitScale: fitScale,
         reset: reset,
         reveal: reveal,
         centerAt: centerAt,
