@@ -3,6 +3,7 @@
 // ({x, y, width, height, cx, cy}) in.
 
 import { recordDiagnostic } from './diagnostics.mjs';
+import { activeLayoutIsCanvas } from './fork-layout.mjs';
 
 // In degraded mode (no ajv) a type-wrong top-level field reaches the renderer.
 // Coerce non-arrays to [] so the module-level Maps build without throwing and
@@ -493,6 +494,11 @@ export function cleanCrossingProblems({
   routeHint = 'adjust route/via or channel coordinates so the relationships use separate corridors'
 }) {
   if (qualityProfileForGate(profile, profileIsAuthoritative) !== 'showcase') return [];
+  // CyberFitz fork: a large real system is rarely planar, so on the infinite
+  // canvas a clean perpendicular crossing is reported by the artifact checker
+  // as a warning to minimise, not a reason to delete relationships. Routes
+  // through nodes, ambiguous shared corridors and label collisions still fail.
+  if (activeLayoutIsCanvas()) return [];
   const routed = asArray(relations).map((relation, index) => {
     if (!relation || !endpointIds.has(relation.from) || !endpointIds.has(relation.to)) return null;
     const points = pathFor(relation)?.points;

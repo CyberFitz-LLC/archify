@@ -130,6 +130,37 @@ test('the same plane still trips the projected-text gate in the page reader', ()
     'page mode keeps the upstream gate, so opting into page is an honest trade');
 });
 
+test('a clean perpendicular crossing warns on the canvas and fails on the page', () => {
+  // Real systems are rarely planar. Upstream's zero-crossing showcase rule can
+  // then only be met by deleting a true relationship; the canvas counts the
+  // crossing as a warning instead and keeps the relationship.
+  const diagram = {
+    schema_version: 1,
+    diagram_type: 'architecture',
+    meta: { title: 'Two flows that must cross', quality_profile: 'showcase', viewBox: [1000, 760] },
+    components: [
+      { id: 'west', type: 'frontend', label: 'West', pos: [80, 348], size: [150, 64] },
+      { id: 'east', type: 'backend', label: 'East', pos: [770, 348], size: [150, 64] },
+      { id: 'north', type: 'security', label: 'North', pos: [425, 60], size: [150, 64] },
+      { id: 'south', type: 'database', label: 'South', pos: [425, 636], size: [150, 64] },
+    ],
+    connections: [
+      { from: 'west', to: 'east', fromSide: 'right', toSide: 'left' },
+      { from: 'north', to: 'south', fromSide: 'bottom', toSide: 'top' },
+    ],
+  };
+  const canvas = validate('architecture', write('cross-canvas.json', diagram));
+  assert.equal(canvas.status, 0, JSON.stringify(canvas.receipt.diagnostics, null, 2));
+  assert.equal(canvas.receipt.composition.summary.errors, 0);
+  assert.equal(canvas.receipt.composition.metrics.properCrossings, 1);
+  assert.equal(canvas.receipt.composition.summary.warnings, 1, 'the crossing is still counted and reported');
+
+  diagram.meta.layout_mode = 'page';
+  const page = validate('architecture', write('cross-page.json', diagram));
+  assert.notEqual(page.status, 0, 'the page reader keeps the upstream zero-crossing rule');
+  assert.ok(page.receipt.diagnostics.some((item) => item.code === 'composition/proper-crossing'));
+});
+
 test('readable-v2 workflows run past six columns', () => {
   const lanes = ['intake', 'review', 'build', 'ops'].map((id) => ({ id, label: id }));
   const nodes = [];

@@ -122,8 +122,9 @@ expectFailure('node id starting with a digit', 'workflow',
   (d) => { d.nodes[0].id = '1user'; }, 'pattern');
 expectFailure('extra property rejected', 'workflow',
   (d) => { d.nodes[0].colour = 'red'; }, 'additional properties');
+// CyberFitz fork: readable-v2 workflows are no longer capped at six columns.
 expectFailure('column beyond layout maximum', 'workflow',
-  (d) => { d.nodes[0].col = 7; }, '<= 5');
+  (d) => { d.nodes[0].col = 48; }, '<= 47');
 expectFailure('missing schema_version', 'sequence',
   (d) => { delete d.schema_version; }, 'schema_version');
 expectFailure('cross-lane state overlap', 'lifecycle',

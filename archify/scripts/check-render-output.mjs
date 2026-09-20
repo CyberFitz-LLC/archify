@@ -144,7 +144,8 @@ if (svgMatches.length === 1) {
     routedRelations: arrows.map((arrow) => ({ relation: arrow, relationIndex: arrow.index, points: arrow.routePoints })),
     threshold: labelClearanceThreshold,
   });
-  const crossingIsError = qualityProfile === 'showcase';
+  // CyberFitz fork: see cleanCrossingProblems — crossings are advisory on the canvas.
+  const crossingIsError = qualityProfile === 'showcase' && !canvasReader;
   const corridorIsError = qualityProfile === 'showcase';
   const rhythmIsError = qualityProfile === 'showcase';
   const labelClearanceIsError = qualityProfile === 'showcase';

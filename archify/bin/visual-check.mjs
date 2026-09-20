@@ -395,6 +395,10 @@ export class ChromeVisualBrowser {
       var diagramWidth = svg ? svg.getBoundingClientRect().width : 0;
       var viewBoxWidth = viewBox ? viewBox.width : 0;
       var scale = viewBoxWidth > 0 ? Math.min(1, diagramWidth / viewBoxWidth) : 0;
+      // CyberFitz fork: on the infinite canvas text is read at real pixels, not
+      // at fit, so the floor guards authored type size rather than plane width.
+      var canvasReader = document.documentElement.getAttribute('data-layout') === 'canvas';
+      if (canvasReader && scale > 0) scale = 1;
       var minimum = null;
       if (svg && scale > 0) {
         Array.from(svg.querySelectorAll('text[data-node-label], text[data-boundary-label], text[data-detail="context"]')).forEach(function (text) {
@@ -438,6 +442,7 @@ export class ChromeVisualBrowser {
         scrollWidth: Math.ceil(document.documentElement.scrollWidth),
         scrollHeight: Math.ceil(document.documentElement.scrollHeight),
         resolvedTheme: document.documentElement.getAttribute('data-theme') || '',
+        readerLayout: canvasReader ? 'canvas' : 'page',
         readerWidth: reader ? reader.getBoundingClientRect().width : 0,
         diagramWidth: diagramWidth,
         viewBoxWidth: viewBoxWidth,
@@ -531,6 +536,7 @@ function observation({ width, height, theme, metrics }) {
     overflowX,
     overflowY,
     ok: !overflowX && !overflowY,
+    readerLayout: metrics.readerLayout === 'canvas' ? 'canvas' : 'page',
     readerWidth: Number(metrics.readerWidth) || null,
     diagramWidth: Number(metrics.diagramWidth) || null,
     viewBoxWidth: Number(metrics.viewBoxWidth) || null,

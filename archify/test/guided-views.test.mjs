@@ -125,14 +125,15 @@ test('guided views reject dangling semantic ids', () => {
 
 test('guided views schema enforces collection and focus bounds', () => {
   const tooMany = fixture('architecture');
-  tooMany.meta.views = Array.from({ length: 6 }, (_, index) => ({
+  // CyberFitz fork: a large canvas is toured by chapters, so the cap is twelve.
+  tooMany.meta.views = Array.from({ length: 13 }, (_, index) => ({
     id: `view-${index}`,
     label: `View ${index}`,
     focus: [tooMany.components[0].id],
   }));
   const overLimit = run('architecture', tooMany, 'too-many');
   assert.notEqual(overLimit.result.status, 0);
-  assert.match(overLimit.result.stderr, /must NOT have more than 5 items/);
+  assert.match(overLimit.result.stderr, /must NOT have more than 12 items/);
 
   const duplicateFocus = fixture('dataflow');
   duplicateFocus.meta.views = [{ id: 'duplicate', label: 'Duplicate', focus: ['web', 'web'] }];

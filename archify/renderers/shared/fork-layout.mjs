@@ -28,3 +28,15 @@ export function isCanvasLayout(meta, env = process.env) {
 export function layoutHtmlAttr(layoutMode) {
   return layoutMode === 'canvas' ? ' data-layout="canvas"' : '';
 }
+
+// The renderers are one-diagram CLI programs. loadDiagram records the resolved
+// reader here so shared geometry gates can ask without every renderer having to
+// thread meta through its call sites (which would multiply merge touchpoints).
+let activeLayoutMode = null;
+export function setActiveLayoutMode(meta, env = process.env) {
+  activeLayoutMode = resolveLayoutMode(meta, env);
+  return activeLayoutMode;
+}
+export function activeLayoutIsCanvas(env = process.env) {
+  return (activeLayoutMode ?? resolveLayoutMode(undefined, env)) === 'canvas';
+}

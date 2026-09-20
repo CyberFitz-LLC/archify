@@ -174,6 +174,12 @@ exports carry no repository evidence.
 
 ## Visual quality and engineering truth
 
+`meta.layout_mode` (CyberFitz fork) selects the reader: omit it for the infinite
+canvas, or set `"page"` for the upstream boxed first-screen reader. It never
+changes authored geometry. On the canvas `meta.viewBox` may be any size, workflow
+`readable-v2` columns, dataflow stages and rows, and lifecycle phase columns
+follow the authored content, and `meta.views` accepts up to twelve chapters.
+
 `meta.quality_profile` and `meta.engineering_profile` answer different
 questions. `quality_profile` is available in all five modes and controls how
 strictly Archify judges composition. `engineering_profile` is an optional

@@ -16,7 +16,9 @@ import {
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const skillRoot = path.resolve(__dirname, '..');
 const template = fs.readFileSync(path.join(skillRoot, 'assets', 'template.html'), 'utf8');
-const skill = fs.readFileSync(path.join(skillRoot, 'SKILL.md'), 'utf8');
+// CyberFitz fork: the page reader's first-screen contract moved out of SKILL.md
+// (the canvas is the default reader) into an opt-in reference.
+const skill = fs.readFileSync(path.join(skillRoot, 'references/page-reader.md'), 'utf8');
 const reader = template.slice(
   template.indexOf('Adaptive Reader Shell'),
   template.indexOf('Archify.view = (function ()'),
