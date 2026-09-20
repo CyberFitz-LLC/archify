@@ -4979,8 +4979,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
        block is assembled last so it wins without !important.
        ============================================================ */
     @media screen {
+      /* Percent heights, not dvh: the plane is pinned with inset: 0, and dvh
+         resolves against the wrong box under device emulation. */
+      html[data-layout="canvas"]:not([data-embed="true"]) {
+        height: 100%;
+        overflow: hidden;
+      }
       html[data-layout="canvas"]:not([data-embed="true"]) body {
-        height: 100dvh;
+        height: 100%;
         min-height: 0;
         padding: 0;
         overflow: hidden;
@@ -4990,7 +4996,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         display: block;
         width: 100%;
         max-width: none;
-        height: 100dvh;
+        height: 100%;
         margin: 0;
       }
 
@@ -5080,63 +5086,99 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         padding-top: 9.5rem;
       }
 
-      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes {
-        position: fixed;
-        left: 1rem;
-        bottom: 1rem;
-        z-index: 85;
-        display: flex;
-        flex-direction: column-reverse;
-        align-items: flex-start;
-        gap: 0.5rem;
-        width: min(26rem, calc(100vw - 2rem));
-        max-height: calc(100dvh - 7rem);
-        pointer-events: none;
-      }
-      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes > * { pointer-events: auto; }
+      .canvas-notes-toggle { display: none; }
       html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-toggle {
         display: inline-flex;
+        flex: none;
         align-items: center;
-        gap: 0.5rem;
-        min-height: 2.25rem;
-        padding: 0 0.8rem;
+        gap: 0.4rem;
+        min-height: 1.75rem;
+        margin-left: 0.75rem;
+        padding: 0 0.55rem;
         border: 1px solid var(--toolbar-border);
-        border-radius: 0.58rem;
-        background: var(--toolbar-bg);
+        border-radius: 0.5rem;
+        background: transparent;
         color: var(--toolbar-text);
         font: inherit;
-        font-size: 0.75rem;
+        font-size: 0.6875rem;
         letter-spacing: 0.04em;
         text-transform: uppercase;
         cursor: pointer;
-        backdrop-filter: blur(10px);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-toggle[aria-expanded="true"] {
+        border-color: var(--frontend-stroke);
+        color: var(--frontend-stroke);
       }
       html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-count {
-        min-width: 1.25rem;
-        padding: 0.05rem 0.3rem;
+        min-width: 1.1rem;
+        padding: 0 0.25rem;
         border-radius: 999px;
         background: color-mix(in srgb, var(--text-muted) 22%, transparent);
         text-align: center;
       }
-      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .cards {
-        display: none;
-        grid-template-columns: 1fr;
-        gap: 0.6rem;
-        width: 100%;
-        margin: 0;
-        padding: 0.6rem;
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes {
+        position: fixed;
+        top: 4.25rem;
+        left: 1rem;
+        z-index: 95;
+        width: min(26rem, calc(100vw - 2rem));
+        max-height: calc(100% - 9rem);
         overflow: auto;
+        padding: 0.6rem;
         border: 1px solid var(--toolbar-border);
         border-radius: 0.75rem;
         background: var(--toolbar-bg);
         backdrop-filter: blur(12px);
         box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
       }
-      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes[data-open="true"] .cards { display: grid; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes[hidden] { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .cards {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+        margin: 0;
+      }
       html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .card { padding: 0.8rem 0.9rem; }
-      html[data-layout="canvas"][data-present="true"]:not([data-embed="true"]) .canvas-notes { display: none; }
+      /* Panels anchored to the top of the plane open beneath the floating chrome. */
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-guide,
+      html[data-layout="canvas"]:not([data-embed="true"]) .node-finder,
+      html[data-layout="canvas"]:not([data-embed="true"]) .focus-chip {
+        top: var(--archify-canvas-top, 5rem);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-guide {
+        max-height: calc(100% - var(--archify-canvas-top, 5rem) - 1rem);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .node-finder {
+        max-height: calc(100% - var(--archify-canvas-top, 5rem) - 1rem);
+      }
+      html[data-layout="canvas"][data-present="true"]:not([data-embed="true"]) .canvas-notes,
+      html[data-layout="canvas"][data-present="true"]:not([data-embed="true"]) .canvas-notes-toggle { display: none; }
+      .canvas-guide-hint { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-guide-hint {
+        display: block;
+        margin: 0;
+        padding: 0.6rem 1rem 0.8rem;
+        border-top: 1px solid var(--toolbar-border);
+        color: var(--text-muted);
+        font-size: 0.6875rem;
+        line-height: 1.5;
+      }
 
       @media (max-width: 720px) {
+        /* Upstream returns the toolbar to document flow on phones; on the canvas
+           there is no flow, so it stays pinned and scrolls sideways if needed. */
+        html[data-layout="canvas"]:not([data-embed="true"]) .toolbar {
+          position: fixed;
+          top: 0.5rem;
+          right: 0.5rem;
+          left: 0.5rem;
+          width: auto;
+          max-width: none;
+          margin: 0;
+          justify-content: flex-end;
+          overflow-x: auto;
+          scrollbar-width: none;
+        }
         html[data-layout="canvas"]:not([data-embed="true"]) .header {
           top: 4rem;
           max-width: calc(100vw - 2rem);
@@ -5144,7 +5186,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         html[data-layout="canvas"]:not([data-embed="true"]) .subtitle { display: none; }
         html[data-layout="canvas"]:not([data-embed="true"]) .guided-views { top: 7.25rem; }
         html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container { padding: 7.5rem 0.75rem 8rem; }
-        html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes { bottom: 4.5rem; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes { top: 7.25rem; }
       }
     }
 
@@ -11386,17 +11428,22 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         Archify.view.panBy(move[0], move[1]);
       }
 
-      // Summary cards become a collapsible Notes drawer so they never cover the
-      // plane unless the reader asks for them.
+      // Summary cards become a Notes drawer that opens from the title plate, so
+      // they never cover the plane unless the reader asks for them and never
+      // compete with the route, lens and radar panels along the bottom edge.
       function mountNotes() {
-        if (!cards || !cards.children.length) return;
+        var header = document.querySelector('.header');
+        var row = header && header.querySelector('.header-row');
+        if (!cards || !cards.children.length || !row) return;
         var drawer = document.createElement('section');
         drawer.className = 'canvas-notes no-print';
-        drawer.setAttribute('data-open', 'false');
+        drawer.id = 'canvas-notes';
+        drawer.hidden = true;
         var toggle = document.createElement('button');
         toggle.type = 'button';
-        toggle.className = 'canvas-notes-toggle';
+        toggle.className = 'canvas-notes-toggle no-print';
         toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', 'canvas-notes');
         var label = document.createElement('span');
         label.textContent = 'Notes';
         var count = document.createElement('span');
@@ -11404,14 +11451,67 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         count.textContent = String(cards.querySelectorAll('.card').length || cards.children.length);
         toggle.appendChild(label);
         toggle.appendChild(count);
+        row.appendChild(toggle);
         cards.parentNode.insertBefore(drawer, cards);
-        drawer.appendChild(toggle);
         drawer.appendChild(cards);
-        toggle.addEventListener('click', function () {
-          var open = drawer.getAttribute('data-open') !== 'true';
-          drawer.setAttribute('data-open', open ? 'true' : 'false');
+        function setOpen(open) {
+          drawer.hidden = !open;
           toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        toggle.addEventListener('click', function () { setOpen(drawer.hidden); });
+        document.addEventListener('keydown', function (event) {
+          if (event.key === 'Escape' && !drawer.hidden && !event.defaultPrevented) setOpen(false);
         });
+      }
+      // Panels inside the plane (finder, focus chip, guide) anchor to its top
+      // edge, which the floating title and chapters now occupy. Publish the
+      // real chrome height so they open beneath it at any width or language.
+      function measureChrome() {
+        if (!container) return;
+        var bottom = 0;
+        ['.header', '#guided-views', '.toolbar'].forEach(function (selector) {
+          var element = document.querySelector(selector);
+          if (!element || element.hidden) return;
+          var rect = element.getBoundingClientRect();
+          if (rect.height > 0) bottom = Math.max(bottom, rect.bottom);
+        });
+        container.style.setProperty('--archify-canvas-top', Math.round(bottom + 12) + 'px');
+      }
+      function watchChrome() {
+        measureChrome();
+        window.addEventListener('resize', measureChrome, { passive: true });
+        if (typeof ResizeObserver === 'function') {
+          var observer = new ResizeObserver(measureChrome);
+          ['.header', '#guided-views', '.toolbar'].forEach(function (selector) {
+            var element = document.querySelector(selector);
+            if (element) observer.observe(element);
+          });
+        }
+        var guided = document.getElementById('guided-views');
+        if (guided && typeof MutationObserver === 'function') {
+          new MutationObserver(measureChrome).observe(guided, { attributes: true, attributeFilter: ['hidden'] });
+        }
+      }
+
+      // Floating chapters cover the top of the plane, so semantic camera frames
+      // are inset to land below them.
+      function topInset() {
+        var guided = document.getElementById('guided-views');
+        if (!container || !guided || guided.hidden) return 0;
+        var style = window.getComputedStyle(container);
+        var box = container.getBoundingClientRect();
+        var edge = guided.getBoundingClientRect().bottom - box.top - (parseFloat(style.paddingTop) || 0);
+        return Math.max(0, edge + 16);
+      }
+      // The guide dialog is where readers look for controls; tell them how the
+      // plane moves. English only: the fork has not localised this line.
+      function mountGuideHint() {
+        var guide = document.getElementById('diagram-guide');
+        if (!guide) return;
+        var hint = document.createElement('p');
+        hint.className = 'canvas-guide-hint';
+        hint.textContent = 'Infinite canvas: drag or scroll to pan · Ctrl/⌘ + scroll or pinch to zoom · 0 fits everything · 1 shows real size · arrow keys nudge.';
+        guide.appendChild(hint);
       }
 
       if (container) {
@@ -11424,6 +11524,8 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
       }
       document.addEventListener('keydown', onKey);
       mountNotes();
+      mountGuideHint();
+      watchChrome();
 
       return {
         enabled: true,
@@ -11431,6 +11533,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
         maxScale: maxScale,
         readableScale: readableScale,
         detailLevel: detailLevel,
+        topInset: topInset,
         paint: paint
       };
     })();
@@ -12291,6 +12394,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE.
           top = Math.max(top, visibleTop + padding);
           bottom = Math.min(bottom, visibleBottom - Math.max(padding, 72));
         }
+        if (canvas) top = Math.max(top, Archify.canvas.topInset());
         var chip = document.getElementById('focus-chip');
         if (chip && !chip.hidden) {
           var lensEnd = chip.offsetLeft + chip.offsetWidth + 24 - (svg.offsetLeft || 0);
