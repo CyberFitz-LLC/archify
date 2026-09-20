@@ -1,7 +1,8 @@
 # CyberFitz fork of Archify
 
 Upstream: <https://github.com/tt-a1i/archify> (MIT). Forked from upstream `main`
-at `72c750b` (2.17.0-dev.1, ten commits past `v2.16.0`), because that is where
+at `72c750b` (2.17.0-dev.1, ten commits past `v2.16.0`; merged up to `29f1ff5` when
+the GitHub fork was created), because that is where
 upstream split the viewer into `viewer/*` modules; forking the older monolithic
 template would have made every later sync a rewrite.
 
