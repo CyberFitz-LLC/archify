@@ -48,6 +48,9 @@
         "quality_profile": {
           "$ref": "common.schema.json#/$defs/qualityProfile"
         },
+        "layout_mode": {
+          "$ref": "common.schema.json#/$defs/layoutMode"
+        },
         "views": {
           "$ref": "common.schema.json#/$defs/guidedViews"
         },

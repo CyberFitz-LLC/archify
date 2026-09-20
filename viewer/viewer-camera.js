@@ -17,10 +17,30 @@
       var autoScrollUntil = 0;
 
       var viewBox = svg.viewBox && svg.viewBox.baseVal;
+      // CyberFitz fork: on the infinite canvas the camera is unbounded. Scale
+      // stays relative to "fit" (1 = whole viewBox fitted), but the range is
+      // derived from real pixels so any authored viewBox can be read at 100%.
+      var canvas = Boolean(Archify.canvas && Archify.canvas.enabled);
+      var pinch = null;
+      var touches = Object.create(null);
 
+      function fitScale() {
+        var metrics = contentMetrics();
+        return metrics && metrics.scale > 0 ? metrics.scale : 1;
+      }
+      function minScale() { return canvas ? Archify.canvas.minScale(fitScale()) : 1; }
+      function maxScale() { return canvas ? Archify.canvas.maxScale(fitScale()) : 3; }
       function clamp() {
         var width = svg.clientWidth || 1;
         var height = svg.clientHeight || 1;
+        if (canvas) {
+          // Free pan: only keep a sliver of the authored plane reachable so the
+          // diagram can never be lost off-screen.
+          var keep = Math.min(120, width / 4, height / 4);
+          state.x = Math.min(width - keep, Math.max(keep - width * state.scale, state.x));
+          state.y = Math.min(height - keep, Math.max(keep - height * state.scale, state.y));
+          return;
+        }
         state.x = Math.min(0, Math.max(width - width * state.scale, state.x));
         state.y = Math.min(0, Math.max(height - height * state.scale, state.y));
       }
@@ -66,6 +86,7 @@
       }
       function detailLevel() {
         if (state.mode === 'semantic') return 'full';
+        if (canvas) return Archify.canvas.detailLevel(state.scale * fitScale());
         if (state.scale >= 1.75) return 'full';
         if (state.scale >= 1) return 'read';
         return 'map';
@@ -73,7 +94,7 @@
       function renderControls() {
         var semantic = state.mode === 'semantic' && state.scale > 1.01;
         var detail = detailLevel();
-        var percent = Math.round(state.scale * 100) + '%';
+        var percent = Math.round(state.scale * (canvas ? fitScale() : 1) * 100) + '%';
         var levelLabel = viewerText('viewer.nav.level.' + detail);
         var detailHint = detail === 'map'
           ? viewerText('viewer.nav.detail.map')
@@ -100,7 +121,8 @@
       }
       function clipToViewport(camera) {
         camera = camera || state;
-        if (camera.scale <= 1.001) {
+        // The canvas paints across its chrome gutters, so it never clips to the SVG box.
+        if (canvas || camera.scale <= 1.001) {
           svg.style.removeProperty('clip-path');
           return;
         }
@@ -136,9 +158,10 @@
         svg.style.transform = 'translate(' + state.x + 'px,' + state.y + 'px) scale(' + state.scale + ')';
         syncViewportClip();
         renderControls();
-        outBtn.disabled = state.scale <= 1;
-        inBtn.disabled = state.scale >= 3;
-        container.classList.toggle('is-pannable', state.scale > 1);
+        outBtn.disabled = state.scale <= minScale() + 0.0005;
+        inBtn.disabled = state.scale >= maxScale() - 0.0005;
+        container.classList.toggle('is-pannable', canvas || state.scale > 1);
+        if (canvas) Archify.canvas.paint(state, fitScale());
         svg.setAttribute('data-view-scale', String(state.scale));
         if (Archify.radar && typeof Archify.radar.sync === 'function') Archify.radar.sync();
         if (Archify.viewerChromeLayout && typeof Archify.viewerChromeLayout.schedule === 'function') {
@@ -239,10 +262,12 @@
         options = options || {};
         if (options.manual !== false) interruptCamera();
         var previous = state.scale;
-        next = Math.max(1, Math.min(3, Math.round(next * 4) / 4));
+        next = canvas
+          ? Math.max(minScale(), Math.min(maxScale(), next))
+          : Math.max(1, Math.min(3, Math.round(next * 4) / 4));
         if (next === previous) return;
-        var centerX = (svg.clientWidth || 1) / 2;
-        var centerY = (svg.clientHeight || 1) / 2;
+        var centerX = options.anchor ? options.anchor.x : (svg.clientWidth || 1) / 2;
+        var centerY = options.anchor ? options.anchor.y : (svg.clientHeight || 1) / 2;
         var contentX = (centerX - state.x) / previous;
         var contentY = (centerY - state.y) / previous;
         state.scale = next;
@@ -277,9 +302,10 @@
           catch (_) { container.scrollLeft = mobileTarget; }
           return true;
         }
-        var minimumScale = Math.max(1, Math.min(3, Number(options.minimumScale) || 1));
+        var minimumScale = Math.max(1, Math.min(maxScale(), Number(options.minimumScale) || 1));
+        if (canvas) minimumScale = Math.max(minimumScale, Math.min(maxScale(), Archify.canvas.readableScale(fitScale())));
         var requestedScale = Number(options.scale);
-        state.scale = Math.max(minimumScale, Math.min(3, Number.isFinite(requestedScale) ? requestedScale : state.scale));
+        state.scale = Math.max(minimumScale, Math.min(maxScale(), Number.isFinite(requestedScale) ? requestedScale : state.scale));
         var contentX = metrics.offsetX + (logicalX - viewBox.x) * metrics.scale;
         var contentY = metrics.offsetY + (logicalY - viewBox.y) * metrics.scale;
         state.x = metrics.width / 2 - contentX * state.scale;
@@ -355,9 +381,12 @@
           else bottom = Math.min(bottom, receiptTop - 24);
         }
         if (right <= left || bottom <= top) return false;
-        var maxScale = options.maxScale || (options.includeNeighbors ? 1.9 : 2.15);
+        var frameMaxScale = options.maxScale || (options.includeNeighbors ? 1.9 : 2.15);
+        // On a large canvas "fit" can be far below reading size, so a semantic
+        // frame may zoom as far as real-pixel reading scale needs.
+        if (canvas) frameMaxScale = Math.max(frameMaxScale, Archify.canvas.readableScale(fitScale()) * (options.includeNeighbors ? 1 : 1.15));
         var targetScale = Math.min((right - left) / bounds.width, (bottom - top) / bounds.height) * 0.9;
-        targetScale = Math.max(1, Math.min(maxScale, targetScale));
+        targetScale = Math.max(1, Math.min(frameMaxScale, targetScale));
         if (targetScale < 1.08) targetScale = 1;
         var target = {
           scale: Math.round(targetScale * 100) / 100,
@@ -467,6 +496,10 @@
         }
       }
       function onPointerEnd(event) {
+        if (touches[event.pointerId]) {
+          delete touches[event.pointerId];
+          pinch = null;
+        }
         if (!drag) return;
         var moved = drag.moved;
         drag = null;
@@ -478,17 +511,72 @@
         }
       }
 
-      inBtn.addEventListener('click', function () { zoom(state.scale + 0.25); });
-      outBtn.addEventListener('click', function () { zoom(state.scale - 0.25); });
+      function stepIn() { zoom(canvas ? state.scale * 1.25 : state.scale + 0.25); }
+      function stepOut() { zoom(canvas ? state.scale / 1.25 : state.scale - 0.25); }
+      function localPoint(clientX, clientY) {
+        // The SVG's untransformed layout box is the container's content box.
+        var rect = container.getBoundingClientRect();
+        var style = window.getComputedStyle(container);
+        return {
+          x: clientX - rect.left - (parseFloat(style.borderLeftWidth) || 0) - (parseFloat(style.paddingLeft) || 0),
+          y: clientY - rect.top - (parseFloat(style.borderTopWidth) || 0) - (parseFloat(style.paddingTop) || 0)
+        };
+      }
+      function zoomAt(clientX, clientY, factor) {
+        if (!Number.isFinite(factor) || factor <= 0) return;
+        zoom(state.scale * factor, { anchor: localPoint(clientX, clientY) });
+      }
+      function panBy(dx, dy) {
+        if (!Number.isFinite(dx) || !Number.isFinite(dy) || (!dx && !dy)) return;
+        interruptCamera();
+        state.x += dx;
+        state.y += dy;
+        apply();
+      }
+      function actualSize() {
+        zoom(1 / fitScale());
+      }
+      inBtn.addEventListener('click', stepIn);
+      outBtn.addEventListener('click', stepOut);
       resetBtn.addEventListener('click', reset);
       container.addEventListener('pointerdown', function (event) {
-        if (state.scale <= 1 || event.button !== 0 || event.target.closest('.diagram-nav, .focus-chip, .node-finder, .diagram-guide, .overview-map, .route-probe, .semantic-lens') || event.target.closest('[data-node-id]') || event.target.closest('[data-relationship-hit-key]')) return;
+        if (canvas && event.pointerType === 'touch') {
+          touches[event.pointerId] = { x: event.clientX, y: event.clientY };
+          var ids = Object.keys(touches);
+          if (ids.length === 2) {
+            var a = touches[ids[0]];
+            var b = touches[ids[1]];
+            drag = null;
+            container.classList.remove('is-panning');
+            interruptCamera();
+            pinch = { distance: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)), x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+            return;
+          }
+        }
+        if ((!canvas && state.scale <= 1) || event.button !== 0 || event.target.closest('.diagram-nav, .focus-chip, .node-finder, .diagram-guide, .overview-map, .route-probe, .semantic-lens') || event.target.closest('[data-node-id]') || event.target.closest('[data-relationship-hit-key]')) return;
         interruptCamera();
         drag = { startX: event.clientX, startY: event.clientY, x: state.x, y: state.y, moved: false };
         container.classList.add('is-panning');
         try { container.setPointerCapture(event.pointerId); } catch (_) {}
       });
       container.addEventListener('pointermove', function (event) {
+        if (canvas && touches[event.pointerId]) {
+          touches[event.pointerId] = { x: event.clientX, y: event.clientY };
+          var ids = Object.keys(touches);
+          if (pinch && ids.length === 2) {
+            var a = touches[ids[0]];
+            var b = touches[ids[1]];
+            var distance = Math.max(1, Math.hypot(a.x - b.x, a.y - b.y));
+            var midX = (a.x + b.x) / 2;
+            var midY = (a.y + b.y) / 2;
+            state.x += midX - pinch.x;
+            state.y += midY - pinch.y;
+            zoom(state.scale * (distance / pinch.distance), { manual: false, anchor: localPoint(midX, midY) });
+            pinch = { distance: distance, x: midX, y: midY };
+            apply();
+            return;
+          }
+        }
         if (!drag) return;
         var dx = event.clientX - drag.startX;
         var dy = event.clientY - drag.startY;
@@ -514,8 +602,12 @@
       requestAnimationFrame(syncSemantic);
 
       return {
-        zoomIn: function () { zoom(state.scale + 0.25); },
-        zoomOut: function () { zoom(state.scale - 0.25); },
+        zoomIn: stepIn,
+        zoomOut: stepOut,
+        zoomAt: zoomAt,
+        panBy: panBy,
+        actualSize: actualSize,
+        fitScale: fitScale,
         reset: reset,
         reveal: reveal,
         centerAt: centerAt,

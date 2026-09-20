@@ -18,7 +18,10 @@
       var MAX_READER_WIDTH = 1920;
       var SAFE_BOTTOM_GAP = 12;
 
-      if (diagram && ratio >= WIDE_RATIO) {
+      // CyberFitz fork: the infinite canvas owns the whole viewport, so the
+      // adaptive page reader (and its mobile wide-diagram scroller) stands down.
+      var canvasLayout = Boolean(Archify.canvas && Archify.canvas.enabled);
+      if (diagram && ratio >= WIDE_RATIO && !canvasLayout) {
         diagram.setAttribute('data-wide-diagram', 'true');
         html.setAttribute('data-diagram-shape', 'wide');
       }
@@ -37,6 +40,7 @@
       }
       function eligible() {
         return Boolean(
+          !canvasLayout &&
           shell && diagram && svg && ratio >= WIDE_RATIO &&
           window.innerWidth >= MIN_DESKTOP_WIDTH &&
           html.getAttribute('data-embed') !== 'true' &&

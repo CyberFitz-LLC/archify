@@ -81,6 +81,7 @@
       }
       function eligible() {
         return Boolean(
+          !(Archify.canvas && Archify.canvas.enabled) &&
           container && svg && nav &&
           window.innerWidth > 720 &&
           html.getAttribute('data-embed') !== 'true' &&

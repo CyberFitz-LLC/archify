@@ -8,6 +8,9 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const output = path.join(root, 'archify/assets/template.html');
 const fragments = [
   ['/* ARCHIFY:EXPORT */', 'export.js'],
+  // CyberFitz fork: infinite canvas reader (policy + input, then layout CSS).
+  ['/* ARCHIFY:FORK_CANVAS */', 'fork-canvas.js'],
+  ['/* ARCHIFY:FORK_CANVAS_CSS */', 'fork-canvas.css'],
   ['/* ARCHIFY:READER_LAYOUT */', 'reader-layout.js'],
   ['/* ARCHIFY:CHROME_LAYOUT */', 'viewer-chrome-layout.js'],
   ['/* ARCHIFY:CAMERA */', 'viewer-camera.js'],

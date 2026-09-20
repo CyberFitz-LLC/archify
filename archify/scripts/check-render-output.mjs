@@ -102,7 +102,11 @@ if (svgMatches.length === 1) {
   addCheck('finite_svg', nonFiniteAttrs.length === 0, nonFiniteAttrs);
   const legendStart = svg.indexOf('<!-- Legend -->');
   const beforeLegend = legendStart >= 0 ? svg.slice(0, legendStart) : svg;
-  const desktopReadabilityIssue = collectDesktopReadability(svgAttrs, beforeLegend);
+  // CyberFitz fork: the projected-text floor assumes the whole viewBox is
+  // squeezed into a 930px page slot. On the infinite canvas the reader zooms to
+  // real pixels, so viewBox size is not a readability defect there.
+  const canvasReader = /<html\b[^>]*\sdata-layout="canvas"/i.test(html);
+  const desktopReadabilityIssue = canvasReader ? null : collectDesktopReadability(svgAttrs, beforeLegend);
   const arrows = collectArrows(beforeLegend);
   const diagonal = arrows.flatMap((arrow) => diagonalStraightSegments(arrow).map((segment) => ({ arrow, ...segment })));
   addCheck(

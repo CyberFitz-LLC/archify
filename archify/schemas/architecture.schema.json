@@ -20,6 +20,7 @@
         "animation": { "$ref": "common.schema.json#/$defs/animation" },
         "visual_preset": { "$ref": "common.schema.json#/$defs/visualPreset" },
         "quality_profile": { "$ref": "common.schema.json#/$defs/qualityProfile" },
+        "layout_mode": { "$ref": "common.schema.json#/$defs/layoutMode" },
         "engineering_profile": { "enum": ["deployment-ownership"] },
         "repository": {
           "type": "object",

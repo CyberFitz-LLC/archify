@@ -19,6 +19,10 @@
     "qualityProfile": {
       "enum": ["standard", "showcase"]
     },
+    "layoutMode": {
+      "description": "CyberFitz fork. Reader layout. Omit for the fork default, canvas: a full-viewport infinite canvas with free pan and wide-range zoom, where the authored viewBox may be as large as the subject needs. Use page only when the user explicitly wants the upstream boxed first-screen reader.",
+      "enum": ["canvas", "page"]
+    },
     "side": {
       "enum": ["left", "right", "top", "bottom"]
     },

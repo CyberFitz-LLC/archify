@@ -1,3 +1,4 @@
+import { resolveLayoutMode } from './fork-layout.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import { applyTemplate, renderCards, esc } from './utils.mjs';
@@ -62,6 +63,7 @@ export function writeDiagram({ outPath, template, diagramType, meta, svg, cards,
     cards: renderCards(cards),
     locale: meta.locale,
     visualPreset: meta.visual_preset || 'classic',
+    layoutMode: resolveLayoutMode(meta),
     guidedViews: meta.views || [],
     sourceEvidence,
   }));

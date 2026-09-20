@@ -1,0 +1,175 @@
+    /* ============================================================
+       CyberFitz fork — Infinite Canvas reader layout.
+       Screen only: print and embeds keep the upstream page reader.
+       Specificity matches the upstream presentation rules on purpose, and this
+       block is assembled last so it wins without !important.
+       ============================================================ */
+    @media screen {
+      html[data-layout="canvas"]:not([data-embed="true"]) body {
+        height: 100dvh;
+        min-height: 0;
+        padding: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .container {
+        display: block;
+        width: 100%;
+        max-width: none;
+        height: 100dvh;
+        margin: 0;
+      }
+
+      /* The plane. Gutters keep "fit" clear of the floating chrome, while the
+         zoomed diagram still paints across them. */
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        display: block;
+        margin: 0;
+        padding: 5.25rem 1.5rem 4.5rem;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+        background-color: var(--bg);
+        background-image: radial-gradient(circle, color-mix(in srgb, var(--text-muted) 34%, transparent) 1px, transparent 1.4px);
+        background-size: var(--archify-canvas-grid, 32px) var(--archify-canvas-grid, 32px);
+        background-position: var(--archify-canvas-x, 0px) var(--archify-canvas-y, 0px);
+        background-origin: content-box;
+        overflow: hidden;
+        touch-action: none;
+        cursor: grab;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container::before,
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container::after { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container.is-panning { cursor: grabbing; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container > svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        overflow: visible;
+        /* Wheel and pinch input is continuous; easing it makes the plane lag
+           behind the hand. Semantic camera moves animate frame by frame. */
+        transition: none;
+      }
+      /* The authored grid rectangle would draw the viewBox as a tile floating
+         on the plane; the canvas supplies its own endless grid instead. */
+      html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container > svg > rect[fill="url(#grid)"] { display: none; }
+
+      /* Floating chrome */
+      html[data-layout="canvas"]:not([data-embed="true"]) .header {
+        position: fixed;
+        top: 1rem;
+        left: 1rem;
+        z-index: 90;
+        max-width: min(34rem, calc(100vw - 31rem));
+        margin: 0;
+        padding: 0.55rem 0.9rem 0.6rem;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.75rem;
+        background: var(--toolbar-bg);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .header-row { margin-bottom: 0; flex-wrap: nowrap; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .header-row::after { display: none; }
+      html[data-layout="canvas"]:not([data-embed="true"]) h1 {
+        min-width: 0;
+        overflow: hidden;
+        font-size: 1rem;
+        line-height: 1.3;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .subtitle {
+        margin-top: 0.15rem;
+        overflow: hidden;
+        font-size: 0.75rem;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .guided-views {
+        position: fixed;
+        top: 4.6rem;
+        left: 1rem;
+        right: 1rem;
+        z-index: 80;
+        max-width: 72rem;
+        margin: 0 auto;
+        backdrop-filter: blur(10px);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .guided-views:not([hidden]) ~ .diagram-container {
+        padding-top: 9.5rem;
+      }
+
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes {
+        position: fixed;
+        left: 1rem;
+        bottom: 1rem;
+        z-index: 85;
+        display: flex;
+        flex-direction: column-reverse;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: min(26rem, calc(100vw - 2rem));
+        max-height: calc(100dvh - 7rem);
+        pointer-events: none;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes > * { pointer-events: auto; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-height: 2.25rem;
+        padding: 0 0.8rem;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.58rem;
+        background: var(--toolbar-bg);
+        color: var(--toolbar-text);
+        font: inherit;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        cursor: pointer;
+        backdrop-filter: blur(10px);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes-count {
+        min-width: 1.25rem;
+        padding: 0.05rem 0.3rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+        text-align: center;
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .cards {
+        display: none;
+        grid-template-columns: 1fr;
+        gap: 0.6rem;
+        width: 100%;
+        margin: 0;
+        padding: 0.6rem;
+        overflow: auto;
+        border: 1px solid var(--toolbar-border);
+        border-radius: 0.75rem;
+        background: var(--toolbar-bg);
+        backdrop-filter: blur(12px);
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2);
+      }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes[data-open="true"] .cards { display: grid; }
+      html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes .card { padding: 0.8rem 0.9rem; }
+      html[data-layout="canvas"][data-present="true"]:not([data-embed="true"]) .canvas-notes { display: none; }
+
+      @media (max-width: 720px) {
+        html[data-layout="canvas"]:not([data-embed="true"]) .header {
+          top: 4rem;
+          max-width: calc(100vw - 2rem);
+        }
+        html[data-layout="canvas"]:not([data-embed="true"]) .subtitle { display: none; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .guided-views { top: 7.25rem; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .diagram-container { padding: 7.5rem 0.75rem 8rem; }
+        html[data-layout="canvas"]:not([data-embed="true"]) .canvas-notes { bottom: 4.5rem; }
+      }
+    }
