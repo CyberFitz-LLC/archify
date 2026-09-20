@@ -17,7 +17,10 @@ import { fileURLToPath } from 'node:url';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const skill = path.join(root, 'archify');
 const quiet = !process.argv.includes('--verbose');
-const run = (cmd, args, cwd = skill) => execFileSync(cmd, args, { cwd, stdio: quiet ? ['ignore', 'ignore', 'inherit'] : 'inherit' });
+const run = (cmd, args, cwd = skill, env = {}) => execFileSync(cmd, args, { cwd, env: { ...process.env, ...env }, stdio: quiet ? ['ignore', 'ignore', 'inherit'] : 'inherit' });
+// Upstream-owned showcase artifacts stay in the page reader so they remain
+// byte-identical to upstream and never conflict in a merge.
+const PAGE = { ARCHIFY_DEFAULT_LAYOUT: 'page' };
 
 run('npm', ['run', '--silent', 'generate:viewer']);
 run('npm', ['run', '--silent', 'generate:validators']);
@@ -50,9 +53,9 @@ run(process.execPath, ['bin/archify.mjs', 'compare', 'architecture',
   'examples/checkout-platform.head.architecture.json',
   path.join(root, 'examples/checkout-platform-delta.html'),
   '--receipt', path.join(root, 'examples/checkout-platform-delta.receipt.json'),
-  '--quality', 'showcase', '--json'].concat([]), skill);
+  '--quality', 'showcase', '--json'], skill, PAGE);
 // Upstream's proof gallery under docs/ is rebuilt so its freshness test passes.
-run(process.execPath, [path.join(root, 'scripts/build-gallery.mjs'), path.join(root, 'docs')], skill);
+run(process.execPath, [path.join(root, 'scripts/build-gallery.mjs'), path.join(root, 'docs')], skill, PAGE);
 
 if (process.argv.includes('--zip')) run('bash', ['scripts/build-zip.sh'], root);
 console.log('fork: generated artifacts are fresh');
