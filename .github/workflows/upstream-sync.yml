@@ -1,0 +1,122 @@
+name: Upstream sync (CyberFitz fork)
+
+# Watches tt-a1i/archify for a new stable release. When one appears, merges it
+# into a sync/* branch, rebuilds generated artifacts, runs the full test suite,
+# and opens a pull request. Nothing reaches main without review.
+on:
+  schedule:
+    - cron: '0 14 * * 1'   # Mondays 14:00 UTC (07:00 America/Phoenix)
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Upstream tag to merge (blank = newest stable release)
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Never run in the upstream repository if this file is ever contributed back.
+    if: github.repository != 'tt-a1i/archify'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Provision Chrome and ffmpeg for browser tests and the README proof
+        id: chrome
+        uses: browser-actions/setup-chrome@v2
+        with:
+          chrome-version: stable
+          install-dependencies: true
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
+      - name: Configure git identity
+        run: |
+          git config user.name "cyberfitz-sync[bot]"
+          git config user.email "sync-bot@users.noreply.github.com"
+
+      - name: Merge upstream release
+        id: sync
+        env:
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+          TAG: ${{ inputs.tag }}
+          ARCHIFY_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: |
+          set +e
+          if [ -n "$TAG" ]; then bash fork/sync-upstream.sh --tag "$TAG"; else bash fork/sync-upstream.sh; fi
+          code=$?
+          set -e
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "branch=$(git branch --show-current)" >> "$GITHUB_OUTPUT"
+          if [ "$code" != "0" ] && [ "$code" != "10" ] && [ "$code" != "20" ]; then exit "$code"; fi
+
+      - name: Nothing new upstream
+        if: steps.sync.outputs.code == '10'
+        run: echo "Fork already contains the newest upstream release." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit unresolved conflicts for review
+        if: steps.sync.outputs.code == '20'
+        run: |
+          git diff --name-only --diff-filter=U > /tmp/conflicts.txt
+          git add -A
+          git commit -m "chore(sync): upstream merge with UNRESOLVED conflicts (do not merge)"
+
+      - name: Run the test suite
+        id: tests
+        if: steps.sync.outputs.code == '0'
+        continue-on-error: true
+        working-directory: archify
+        env:
+          ARCHIFY_CHROME: ${{ steps.chrome.outputs.chrome-path }}
+        run: npm test
+
+      - name: Push branch and open pull request
+        if: steps.sync.outputs.code == '0' || steps.sync.outputs.code == '20'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ steps.sync.outputs.branch }}
+          CODE: ${{ steps.sync.outputs.code }}
+          TESTS: ${{ steps.tests.outcome }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          git push --force-with-lease origin "$BRANCH"
+          {
+            echo "Automated sync of upstream **tt-a1i/archify** into the CyberFitz fork."
+            echo
+            if [ "$CODE" = "20" ]; then
+              echo "### ⚠️ Unresolved conflicts — this PR must not be merged as is"
+              echo '```'; cat /tmp/conflicts.txt; echo '```'
+              echo "Resolve on this branch following \`fork/FORK.md\` (the fork's intent wins on the listed fork touchpoints), then run \`node fork/regenerate.mjs\` and \`npm test\` from \`archify/\`."
+            else
+              echo "Merge was clean. Test suite: **$TESTS**."
+            fi
+            echo
+            echo "### Upstream changes to the skill and viewer"
+            echo '```'
+            git log --oneline --no-merges "origin/$BASE_BRANCH..$BRANCH" -- archify viewer scripts | head -200
+            echo '```'
+            echo
+            echo "### Review checklist"
+            echo "- [ ] Canvas reader still default (\`fork/FORK.md\` touchpoints intact)"
+            echo "- [ ] No upstream wording reintroduced that caps diagram size or asks authors to prune content"
+            echo "- [ ] \`npm test\` green, including \`test/fork-*.test.mjs\`"
+          } > /tmp/body.md
+          title="Sync upstream ${BRANCH#sync/upstream-}"
+          [ "$CODE" = "20" ] && title="$title (conflicts)"
+          if gh pr view "$BRANCH" >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "$title" --body-file /tmp/body.md
+          else
+            draft=""; [ "$CODE" = "20" ] || [ "$TESTS" != "success" ] && draft="--draft"
+            gh pr create --base "$BASE_BRANCH" --head "$BRANCH" --title "$title" --body-file /tmp/body.md $draft
+          fi

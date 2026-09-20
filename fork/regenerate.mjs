@@ -8,6 +8,7 @@
 //   examples/*.html, archify/examples/*.html     <- example JSON + template
 //   examples/web-app.html                        <- template style/script blocks
 //   examples/checkout-platform-delta.*, docs/gallery  <- compare + gallery builders
+//   docs/assets/archify-live-proof.*            <- --showcase (needs Chrome + ffmpeg)
 //   archify.zip                                  <- archify/
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -56,6 +57,17 @@ run(process.execPath, ['bin/archify.mjs', 'compare', 'architecture',
   '--quality', 'showcase', '--json'], skill, PAGE);
 // Upstream's proof gallery under docs/ is rebuilt so its freshness test passes.
 run(process.execPath, [path.join(root, 'scripts/build-gallery.mjs'), path.join(root, 'docs')], skill, PAGE);
+
+// Upstream's README motion proof records the gallery artifact hashes, so it goes
+// stale whenever the template changes. It needs Chrome and ffmpeg; without them
+// the step is skipped with a warning and readme-showcase.test.mjs will fail.
+if (process.argv.includes('--showcase')) {
+  try {
+    run(process.execPath, [path.join(root, 'scripts/build-readme-showcase.mjs')], skill, PAGE);
+  } catch (error) {
+    console.warn(`fork: README showcase not rebuilt (${String(error.message).split('\n')[0]})`);
+  }
+}
 
 if (process.argv.includes('--zip')) run('bash', ['scripts/build-zip.sh'], root);
 console.log('fork: generated artifacts are fresh');
