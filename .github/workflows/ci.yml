@@ -70,6 +70,12 @@ jobs:
     needs: scope
     if: always() && !cancelled()
     runs-on: ubuntu-latest
+    # CyberFitz fork: these inherited upstream browser suites assert the page
+    # reader, so they run with the page default exactly as scripts/run-tests.mjs
+    # runs the rest of the inherited suite. Under the fork's canvas default the
+    # adaptive page reader stands down by design and they cannot pass.
+    env:
+      ARCHIFY_DEFAULT_LAYOUT: page
     steps:
       # Keep every required matrix check present; fail closed if classification/checks fail.
       - name: Require successful scope checks
@@ -205,20 +211,25 @@ jobs:
         run: |
           set -euo pipefail
           manifest_version="$(node --input-type=module -e 'import fs from "node:fs"; import { validateStableUpdateManifest } from "./archify/scripts/update-contract.mjs"; process.stdout.write(validateStableUpdateManifest(JSON.parse(fs.readFileSync("./docs/skill-updates/archify/stable.json", "utf8"))).version);')"
-          latest_stable_tag="$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq 'select(.draft == false and .prerelease == false) | .tag_name')"
+          # CyberFitz fork: the manifest names the repository that publishes the
+          # release it describes (the contract pins it to upstream). Check that
+          # repository's Release and tag, not whichever repository runs CI; the
+          # fork publishes no Releases of its own. Upstream, the two are equal.
+          release_repo="$(node --input-type=module -e 'import fs from "node:fs"; const url = new URL(JSON.parse(fs.readFileSync("./docs/skill-updates/archify/stable.json", "utf8")).source.repository); process.stdout.write(url.pathname.replace(/^\/|\.git$/g, ""));')"
+          latest_stable_tag="$(gh api "repos/${release_repo}/releases/latest" --jq 'select(.draft == false and .prerelease == false) | .tag_name')"
           if [[ "$latest_stable_tag" != "v${manifest_version}" ]]; then
             echo "::error::stable.json v${manifest_version} must match the latest published stable Release ${latest_stable_tag:-'(missing)'}"
             exit 1
           fi
-          release_asset_id="$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/v${manifest_version}" --jq 'select(.draft == false and .prerelease == false) | .assets[] | select(.name == "archify.zip") | .id')"
+          release_asset_id="$(gh api "repos/${release_repo}/releases/tags/v${manifest_version}" --jq 'select(.draft == false and .prerelease == false) | .assets[] | select(.name == "archify.zip") | .id')"
           if [[ -z "$release_asset_id" ]]; then
             echo "::error::v${manifest_version} must have a published stable GitHub Release with an archify.zip asset before stable.json is merged"
             exit 1
           fi
           published_archive="$RUNNER_TEMP/archify-v${manifest_version}.zip"
-          gh api "repos/${GITHUB_REPOSITORY}/releases/assets/${release_asset_id}" \
+          gh api "repos/${release_repo}/releases/assets/${release_asset_id}" \
             -H 'Accept: application/octet-stream' > "$published_archive"
-          git fetch --force --no-tags --depth=1 origin \
+          git fetch --force --no-tags --depth=1 "https://github.com/${release_repo}.git" \
             "refs/tags/v${manifest_version}:refs/tags/v${manifest_version}"
           tagged_archive="$RUNNER_TEMP/archify-tag-v${manifest_version}.zip"
           git show "v${manifest_version}:archify.zip" > "$tagged_archive"

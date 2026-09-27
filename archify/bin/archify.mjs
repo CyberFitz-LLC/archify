@@ -67,6 +67,9 @@ function runNode(args, options = {}) {
   return spawnSync(process.execPath, args, {
     cwd: options.cwd || process.cwd(),
     encoding: 'utf8',
+    // The artifact checker's receipt grows with the diagram; Node's default 1 MiB limit truncates
+    // it (ENOBUFS) and a passing check is then reported as an unclassified failure.
+    maxBuffer: 256 * 1024 * 1024,
     stdio: options.stdio || 'inherit',
     env: options.env ? { ...process.env, ...options.env } : process.env,
   });
